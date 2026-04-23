@@ -1,26 +1,62 @@
-# RELATÓRIO TÉCNICO: SISTEMA DISTRIBUÍDO DE AUTOPEÇAS
+# AutoPart-SyncDistributed - Relatórios / Reports
 
-## 1. Introdução
-Este relatório descreve a fundamentação teórica para o desenvolvimento de um sistema de gerenciamento de autopeças. O projeto adota o modelo de **Sistemas Distribuídos**, utilizando uma arquitetura **Cliente-Servidor** para garantir a separação entre a interface do usuário e a lógica de negócios.
+---
 
-## 2. Arquitetura do Sistema
-O sistema é dividido em duas camadas principais que se comunicam através da rede:
-- **Client (Cliente):** Interface desenvolvida em HTML/JavaScript que realiza requisições assíncronas (AJAX/Fetch).
-- **Server (Servidor):** API desenvolvida em PHP que processa as regras de negócio e acessa o banco de dados.
+## 🌐 Escolha o Idioma / Choose Language / اختر اللغة
 
-## 3. Framework Utilizado: Slim Framework (PHP)
-Para a construção da camada servidora, foi escolhido o **Slim Framework**. 
-- **Justificativa:** Por ser um micro-framework, o Slim oferece as ferramentas essenciais para roteamento de APIs sem a complexidade de frameworks maiores. Ele permite a criação de endpoints **RESTful** que retornam dados em formato **JSON**, facilitando a interoperabilidade no ambiente distribuído.
+| 🇧🇷 Português | 🇬🇧 English | 🇸🇦 العربية |
+|-------------|-------------|-----------|
+| [RELATORIO_PT.md](./RELATORIO_PT.md) | [REPORT.md](./REPORT.md) | [RELATORIO_AR.md](./RELATORIO_AR.md) |
 
-## 4. Persistência de Dados: Microsoft SQL Server
-A gestão dos dados será realizada no **Microsoft SQL Server (MSSQL)**, utilizando o **SQL Server Management Studio (SSMS)** para administração.
-- **Integração:** A conexão será feita via driver `sqlsrv` do PHP, garantindo alta performance e segurança em ambiente Windows.
-- **Vantagem:** O uso do MSSQL em sistemas distribuídos oferece suporte nativo a transações complexas (ACID), garantindo que o estoque de peças seja atualizado de forma consistente mesmo com múltiplos acessos simultâneos.
+---
 
-## 5. Conceitos de Sistemas Distribuídos Aplicados
-- **Concorrência:** O servidor gerencia múltiplas requisições de diferentes clientes simultaneamente.
-- **Escalabilidade:** A separação entre o banco de dados SQL Server e a API PHP permite escalar os recursos de hardware de forma independente.
-- **Tolerância a Falhas:** O design permite a implementação futura de clusters de banco de dados para garantir alta disponibilidade.
+## 📊 Sobre o Sistema / About the System / عن النظام
 
-## 6. Conclusão
-A combinação do **Slim Framework** com o **Microsoft SQL Server** provê uma base sólida e profissional para o projeto, atendendo aos requisitos de um sistema distribuído moderno, seguro e eficiente.
+Sistema distribuído completo de gerenciamento de autopeças com:
+
+- ✅ Controle de inventário em tempo real
+- ✅ Registro de movimentações
+- ✅ Alertas de estoque baixo
+- ✅ Relatórios e gráficos
+- ✅ Autenticação JWT segura
+
+---
+
+## 🚀 Acesso Rápido / Quick Access / وصول سريع
+
+- **Interface:** http://localhost:3000
+- **API:** http://localhost:3000/api
+- **GitHub:** https://github.com/MamdouhAlsaodi/AutoPart-SyncDistributed
+- **Teste API:** `node test-api.js`
+
+---
+
+## 🔐 Credenciais de Teste / Test Credentials / بيانات الدخول
+
+| Campo / Field / الحقل | Valor / Value / القيمة |
+|------------------------|------------------------|
+| Email / البريد | admin@autopecas.com |
+| Senha / Password / كلمة المرور | admin123 |
+| Perfil / Profile / الصلاحية | Administrator |
+
+---
+
+## 📦 Tecnologias / Technologies / التقنيات
+
+- **Backend:** Node.js, Express, MongoDB, Mongoose, JWT
+- **Frontend:** HTML5, Tailwind CSS, Vanilla JS, Chart.js
+- **Security:** bcryptjs, express-validator, ACID Transactions
+
+---
+
+## 📖 Documentação Completa / Full Documentation / التوثيق الكامل
+
+Selecione o idioma acima para ler o relatório completo.
+Select a language above to read the full report.
+اختر اللغة أعلاه لقراءة التقرير الكامل.
+
+---
+
+**Versão / Version / الإصدار:** 1.0  
+**Status:** ✅ Production Ready  
+**Data / Date / التاريخ:** 23 April 2026

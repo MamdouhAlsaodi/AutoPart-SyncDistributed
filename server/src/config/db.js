@@ -1,26 +1,25 @@
-const sql = require('mssql');
-require('dotenv').config();
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
-const dbConfig = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    server: process.env.DB_SERVER,
-    database: process.env.DB_NAME,
-    options: { encrypt: true, trustServerCertificate: true }
-};
-
-let pool = null;
+let mongoServer;
 
 async function connect() {
-    if (!pool) {
-        pool = await sql.connect(dbConfig);
-        console.log('✅ Connected to MSSQL Server');
+    try {
+        mongoServer = await MongoMemoryServer.create();
+        const uri = mongoServer.getUri();
+        await mongoose.connect(uri);
+        console.log('✅ Connected to in-memory MongoDB:', uri.substring(0, 30) + '...');
+    } catch (err) {
+        console.error('❌ MongoDB Error:', err.message);
+        throw err;
     }
-    return pool;
 }
+
+function getUri() { return mongoServer?.getUri(); }
 
 async function close() {
-    if (pool) { await pool.close(); pool = null; }
+    await mongoose.disconnect();
+    if (mongoServer) await mongoServer.stop();
 }
 
-module.exports = { connect, close, sql };
+module.exports = { connect, close, getUri };

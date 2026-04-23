@@ -11,12 +11,17 @@ async function request(method, endpoint, body = null) {
         body: body ? JSON.stringify(body) : null
     };
 
-    const response = await fetch(`${API_BASE}${endpoint}`, options);
-    const data = await response.json();
-    if (!response.ok) {
-        throw { erro: true, codigo: response.status, mensagem: data.mensagem || 'Erro no servidor', campo: data.campo || null };
+    try {
+        const response = await fetch(`${API_BASE}${endpoint}`, options);
+        const data = await response.json();
+        if (!response.ok) {
+            throw { erro: true, codigo: response.status, mensagem: data.mensagem || 'Erro no servidor', campo: data.campo || null };
+        }
+        return data;
+    } catch (err) {
+        console.error('API Error:', err);
+        throw err;
     }
-    return data;
 }
 
 const api = {

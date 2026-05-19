@@ -13,13 +13,20 @@ async function request(method, endpoint, body = null) {
 
     try {
         const response = await fetch(`${API_BASE}${endpoint}`, options);
-        const data = await response.json();
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            data = { mensagem: text || `Erro ${response.status}: Resposta não-JSON do servidor` };
+        }
+
         if (!response.ok) {
             throw { erro: true, codigo: response.status, mensagem: data.mensagem || 'Erro no servidor', campo: data.campo || null };
         }
         return data;
     } catch (err) {
-        console.error('API Error:', err);
         throw err;
     }
 }
@@ -38,5 +45,11 @@ const api = {
     getHistory: (pecaId) => request('GET', pecaId ? `/pecas/history/${pecaId}` : '/pecas/history'),
     getLowStock: () => request('GET', '/pecas?estoque=baixo'),
     getCategories: () => request('GET', '/categorias'),
+    createCategory: (data) => request('POST', '/categorias', data),
     getSuppliers: () => request('GET', '/fornecedores'),
+    createSupplier: (data) => request('POST', '/fornecedores', data),
+    // User Management
+    getUsers: () => request('GET', '/users'),
+    createUser: (data) => request('POST', '/users', data),
+    toggleUserStatus: (id) => request('PATCH', `/users/${id}/status`),
 };

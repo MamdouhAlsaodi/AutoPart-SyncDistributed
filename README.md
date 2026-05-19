@@ -119,6 +119,13 @@ GET    /api/categorias             - List categories
 GET    /api/fornecedores           - List suppliers
 ```
 
+### **Users (Admin Only):**
+```
+GET    /api/users                  - List all users
+POST   /api/users                  - Create new user
+PATCH  /api/users/:id/status       - Activate/Deactivate user
+```
+
 ---
 
 ## 📦 How to Run
@@ -148,6 +155,7 @@ node index.js
 | 🔧 **Parts Catalog** | View and manage parts |
 | 📋 **Movements** | Track all inventory movements |
 | 📊 **Reports** | Visual analytics with charts |
+| 👥 **Users** | Manage users & permissions (admin only) |
 
 ---
 
@@ -168,8 +176,8 @@ The system features a clean, modern interface with:
 | **Total Parts** | 8 |
 | **Categories** | 4 |
 | **Suppliers** | 2 |
-| **Users** | 2 |
-| **API Endpoints** | 15+ |
+| **Users** | 3 |
+| **API Endpoints** | 18+ |
 
 ---
 
@@ -304,6 +312,7 @@ node index.js
 | 🔧 **كتالوج القطع** | عرض وإدارة القطع |
 | 📋 **الحركات** | تتبع جميع حركات المخزون |
 | 📊 **التقارير** | التحليلات المرئية بالرسوم البيانية |
+| 👥 **المستخدمين** | إدارة المستخدمين والصلاحيات (admin فقط) |
 
 ---
 
@@ -324,8 +333,8 @@ node index.js
 | **إجمالي القطع** | 8 |
 | **التصنيفات** | 4 |
 | **الموردين** | 2 |
-| **المستخدمين** | 2 |
-| **نقاط الـ API** | 15+ |
+| **المستخدمين** | 3 |
+| **نقاط الـ API** | 18+ |
 
 ---
 
@@ -360,6 +369,6 @@ node index.js
 
 ---
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Status:** ✅ Production Ready  
-**Last Updated:** April 23, 2026
+**Last Updated:** May 19, 2026

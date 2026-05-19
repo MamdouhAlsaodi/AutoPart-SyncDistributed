@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const { connect } = require('./config/db');
 const seed = require('../seed');
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const partsRoutes = require('./routes/partsRoutes');
 const otherRoutes = require('./routes/otherRoutes');
 const path = require('path');
@@ -15,17 +16,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from client directory
-app.use(express.static(path.join(__dirname, '../../client')));
+// Health check (public)
+app.get('/api/ping', (req, res) => {
+    res.json({ status: 'ok', db: 'MongoDB', message: 'AutoPart Sync API V2', timestamp: new Date().toISOString() });
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+
 app.use('/api/pecas', partsRoutes);
 app.use('/api/movimentacoes', partsRoutes);
 app.use('/api', otherRoutes);
 
+// Serve static files from client directory
+app.use(express.static(path.join(__dirname, '../../client')));
+
 app.get('/api/ping', (req, res) => {
-    res.json({ status: 'ok', db: 'MongoDB', message: 'AutoPart Sync API', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', db: 'MongoDB', message: 'AutoPart Sync API V2', timestamp: new Date().toISOString() });
 });
 
 // Serve index.html for root route

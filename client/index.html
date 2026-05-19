@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoPart - Sistema Distribuído de Autopeças</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/tailwind.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -23,6 +23,16 @@
             </div>
         </div>
     </div>
+
+    <!-- Help Button -->
+    <a href="help.html" target="_blank" class="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all z-[9999] group cursor-pointer">
+        <i class="fas fa-question text-xl"></i>
+        <span class="absolute right-full mr-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Ajuda & Tecnologias</span>
+    </a>
+
+
+
+
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
 </body>

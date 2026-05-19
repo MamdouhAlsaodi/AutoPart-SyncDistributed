@@ -63,9 +63,9 @@ Um sistema cloud-based que oferece:
 | Tecnologia | Propósito | Versão |
 |------------|-----------|--------|
 | **Node.js** | Ambiente de execução | v24.14.1 |
-| **Express.js** | Framework web | v4.18.2 |
+| **Express.js** | Framework web | v5.1.0 |
 | **MongoDB** | Banco de dados | v7.0 (in-memory) |
-| **Mongoose** | ODM para MongoDB | v8.0.0 |
+| **Mongoose** | ODM para MongoDB | v9.8.0 |
 | **JWT** | Autenticação de usuários | jsonwebtoken |
 | **bcryptjs** | Criptografia de senhas | para Hashing |
 | **express-validator** | Validação de dados | v7.0.1 |
@@ -89,12 +89,12 @@ Um sistema cloud-based que oferece:
 #### 1. **User (Usuário)**
 ```javascript
 {
-  nome: String,
-  email: String (único),
-  senha: String (hashed),
-  perfil: Enum ['admin', 'operador', 'consulta'],
-  ativo: Boolean,
-  criado_em: Date
+  nome: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  senha: { type: String, required: true, minlength: 6 },   // bcrypt hash
+  perfil: { type: Enum ['admin', 'operador', 'consulta'], default: 'consulta' },
+  ativo: { type: Boolean, default: true },
+  criado_em: { type: Date, default: Date.now }
 }
 ```
 
@@ -159,11 +159,34 @@ Um sistema cloud-based que oferece:
 |--------|---------------|
 | **JWT Authentication** | Tokens JWT com expiração (8 horas) |
 | **Password Hashing** | bcrypt com 10 rounds |
-| **Role-Based Access** | 3 níveis de permissão (admin, operador, consulta) |
+| **Role-Based Access (RBAC)** | 3 níveis de permissão (admin, operador, consulta) |
 | **Input Validation** | express-validator para todas entradas |
 | **CORS** | Configuração Cross-Origin Resource Sharing |
 | **Error Handling** | Tratamento centralizado sem expor detalhes sensíveis |
 | **ACID Transactions** | Mongoose Sessions para operações críticas |
+
+### **Controle de Acesso por Perfil (RBAC):**
+
+| Funcionalidade | admin | operador | consulta |
+|---------------|-------|----------|----------|
+| Dashboard | ✅ | ✅ | ✅ |
+| Visualizar peças | ✅ | ✅ | ✅ |
+| Adicionar peças | ✅ | ✅ | ❌ |
+| Movimentações (entrada/saída) | ✅ | ✅ | ❌ |
+| Categorias / Fornecedores | ✅ | ✅ | ❌ |
+| Relatórios | ✅ | ✅ | ✅ |
+| Gestão de Usuários | ✅ | ❌ | ❌ |
+| Ativar/Desativar usuários | ✅ | ❌ | ❌ |
+
+### **Validação de Dados (Input Validation):**
+
+- **Email:** Formato válido (exemplo@dominio.com), único no sistema
+- **Senha:** Mínimo de 6 caracteres, hash bcrypt antes de armazenar
+- **Perfil:** Enum obrigatório — apenas `admin`, `operador` ou `consulta`
+- **Nome:** Campo obrigatório, sem espaços extras
+- **Código de peça:** Único e obrigatório
+- **Preços:** Valores numéricos positivos
+- **Estoque:** Valores inteiros >= 0
 
 ---
 
@@ -173,6 +196,13 @@ Um sistema cloud-based que oferece:
 ```
 POST   /api/auth/login    - Login do usuário
 GET    /api/auth/me       - Obter dados do usuário atual
+```
+
+### **Gestão de Usuários (Users):** 🔒 *Apenas admin*
+```
+GET    /api/users                 - Listar todos os usuários
+POST   /api/users                 - Criar novo usuário
+PATCH  /api/users/:id/status      - Ativar/Desativar usuário
 ```
 
 ### **Peças (Parts):**
@@ -230,6 +260,14 @@ POST   /api/fornecedores           - Adicionar fornecedor
 - Gráfico (Bar) de quantidade de movimentações
 - Gráfico (Doughnut) de distribuição
 
+### **6. Gestão de Usuários** 🔒 *Apenas admin*
+- Item exclusivo no menu lateral para administradores
+- Tabela completa de usuários do sistema
+- Formulário de criação de novos usuários
+- Ativação/desativação de contas
+- Exibição do perfil (admin, operador, consulta) e status (ativo/inativo)
+- Proteção: usuários operador e consulta não visualizam esta página
+
 ---
 
 ## 🎨 Design e UX
@@ -267,11 +305,20 @@ POST   /api/fornecedores           - Adicionar fornecedor
 - ✅ Monitoramento de desempenho
 
 ### **4. Segurança e Permissões:**
-- ✅ 3 níveis de permissão
+- ✅ 3 níveis de permissão (RBAC)
 - ✅ JWT para autenticação
-- ✅ Criptografia de senhas
+- ✅ Criptografia de senhas (bcrypt)
+- ✅ Middleware de autorização por perfil
 
-### **5. Facilidade de Uso:**
+### **5. Gestão de Usuários:** 🆕
+- ✅ CRUD completo de usuários (admin)
+- ✅ Criação de novos usuários com validação
+- ✅ Ativação/desativação de contas
+- ✅ 3 usuários seed (Administrador, Operador, Consulta)
+- ✅ Página exclusiva no painel administrativo
+- ✅ Validação de email, senha (6+ caracteres) e perfil
+
+### **6. Facilidade de Uso:**
 - ✅ Interface em Português (BR)
 - ✅ Design responsivo
 - ✅ Não requer treinamento intenso
@@ -330,6 +377,9 @@ POST   /api/fornecedores           - Adicionar fornecedor
 ✅ GET /pecas?estoque=baixo - Estoque baixo
 ✅ GET /categorias - Categorias
 ✅ GET /fornecedores - Fornecedores
+✅ GET /users - Listar usuários (admin)
+✅ POST /users - Criar usuário (admin)
+✅ PATCH /users/:id/status - Ativar/Desativar usuário (admin)
 ```
 
 ### **Ferramenta de Teste:**
@@ -365,9 +415,21 @@ node index.js
 https://github.com/MamdouhAlsaodi/AutoPart-SyncDistributed
 
 ### **Credenciais de Teste:**
+
+**Administrador:**
 - **Email:** admin@autopecas.com
 - **Password:** admin123
-- **Role:** Administrator
+- **Role:** Administrator (acesso total)
+
+**Operador:**
+- **Email:** operador@autopecas.com
+- **Password:** operador123
+- **Role:** Operador (entrada/saída, peças)
+
+**Consulta:**
+- **Email:** consulta@autopecas.com
+- **Password:** consulta123
+- **Role:** Consulta (somente leitura)
 
 ---
 
@@ -378,7 +440,7 @@ https://github.com/MamdouhAlsaodi/AutoPart-SyncDistributed
 | Peças | 8 |
 | Categorias | 4 |
 | Fornecedores | 2 |
-| Usuários | 2 |
+| Usuários | 3 |
 
 **Categorias:**
 - Motor
@@ -389,6 +451,11 @@ https://github.com/MamdouhAlsaodi/AutoPart-SyncDistributed
 **Fornecedores:**
 - AutoParts Brasil
 - MotorMax Ltda
+
+**Usuários Seed:**
+- **Administrador** — email: `admin@autopecas.com` / senha: `admin123` / perfil: `admin` / ativo: ✅
+- **Operador** — email: `operador@autopecas.com` / senha: `operador123` / perfil: `operador` / ativo: ✅
+- **Usuário Sem Permissão** — email: `consulta@autopecas.com` / senha: `consulta123` / perfil: `consulta` / ativo: ✅
 
 ---
 
@@ -433,8 +500,8 @@ O sistema AutoPart-SyncDistributed é uma solução completa e integrada para ge
 
 ---
 
-**Data do Relatório:** 23 de abril de 2026  
-**Versão:** 1.0  
+**Data do Relatório:** 19 de maio de 2026  
+**Versão:** 2.0  
 **Status:** ✅ Production Ready  
 **Autor:** Mamdouh Alsaudi
 

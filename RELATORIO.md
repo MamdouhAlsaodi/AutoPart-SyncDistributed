@@ -1,30 +1,30 @@
-# تقرير شامل: نظام AutoPart-SyncDistributed
+# Relatório Abrangente: Sistema AutoPart-SyncDistributed
 
-## 📋 ملخص تنفيذي
+## 📋 Resumo Executivo
 
-**اسم النظام:** AutoPart-SyncDistributed - نظام موزع لإدارة قطع غيار السيارات
+**Nome do Sistema:** AutoPart-SyncDistributed - Sistema Distribuído para Gestão de Autopeças
 
-**النوع:** نظام إدارة مخزون (Inventory Management System)
+**Tipo:** Sistema de Gestão de Estoque (Inventory Management System)
 
-**التقنية:** Full Stack Web Application (MERN Pattern)
+**Tecnologias:** Node.js + Express + MongoDB (MERN Stack)
 
-**الحالة:** ✅ مكتمل وتشغيلي
+**Status:** ✅ Atualizado para Requisitos de Sistemas Distribuídos
 
 ---
 
-## 🎯 عن النظام
+## 🎯 Sobre o Sistema
 
-نظام AutoPart-SyncDistributed هو منصة متكاملة لإدارة قطع غيار السيارات، مصممة للمتاجر وورش الإصلاح التي تحتاج إلى تتبع المخزون وإدارة الحركات المالية بدقة.
+O sistema AutoPart-SyncDistributed é uma plataforma integrada para gestão de autopeças, projetada para lojas e oficinas que necessitam rastrear estoque e gerenciar movimentações financeiras com precisão.
 
-### المشكلة التي يحلها:
+### Problemas que resolve:
 - صعوبة تتبع حركة قطع الغيار (دخول/خروج)
 - فقدان التواريخ لكل عملية
 - نقص التحذيرات للمنتجات منخفضة المخزون
 - عدم وجود تقارير تحليلية
 - صعوبة إدارة الموردين والتصنيفات
 
-### الحل المقدم:
-نظام سحابي (Cloud-based) يوفر:
+### Solução Proposta:
+Sistema baseado em nuvem (Cloud-based) que oferece:
 - تتبع لحظي للمخزون
 - سجل كامل لجميع الحركات
 - تنبيهات تلقائية للمخزون المنخفض
@@ -33,44 +33,43 @@
 
 ---
 
-## 🏗️ البنية التقنية (Architecture)
+## 🏗️ Arquitetura Técnica (Architecture)
 
-### الطبقات (Layers):
+### Camadas (Layers):
 
 ```
 ┌─────────────────────────────────────────┐
 │         Frontend (Client Layer)         │
-│  HTML + Tailwind CSS + Vanilla JS     │
+│  HTML + Tailwind CSS + Vanilla JS       │
 └─────────────────────────────────────────┘
-                  ↓ HTTP/REST
+                  ↓ HTTP/REST (JSON)
 ┌─────────────────────────────────────────┐
-│       API Layer (Express.js)           │
+│       API Layer (Node.js - Express)     │
 │  Routes → Controllers → Models         │
 └─────────────────────────────────────────┘
-                  ↓ Mongoose
+                  ↓ Mongoose (ODM)
 ┌─────────────────────────────────────────┐
-│    Data Layer (MongoDB In-Memory)      │
-│  mongodb-memory-server                 │
+│    Data Layer (MongoDB)                 │
+│  Document Store (Distributed Ready)     │
 └─────────────────────────────────────────┘
 ```
 
 ---
 
-## 🛠️ التقنيات المستخدمة
+## 🛠️ Tecnologias Utilizadas
 
-### **Backend (الخلفية)**
+### **Backend (Servidor)**
 
 | التقنية | الغرض | الإصدار |
 |---------|-------|---------|
-| **Node.js** | بيئة التشغيل | v24.14.1 |
-| **Express.js** | إطار عمل الويب | v4.18.2 |
-| **MongoDB** | قاعدة البيانات | v7.0 (in-memory) |
-| **Mongoose** | ODM لـ MongoDB | v8.0.0 |
+| **Node.js** | بيئة التشغيل الأساسية | v20.x |
+| **Express.js** | إطار عمل الـ API السريع | v5.x |
+| **MongoDB** | قاعدة بيانات NoSQL | v7.x |
+| **Mongoose** | ODM للتفاعل مع البيانات | v9.x |
 | **JWT** | مصادقة المستخدمين | jsonwebtoken |
-| **bcryptjs** | تشفير كلمات المرور | لـ Hashing |
-| **express-validator** | التحقق من البيانات | v7.0.1 |
+| **Bcrypt** | تشفير كلمات المرور | bcryptjs |
 
-### **Frontend (الواجهة)**
+### **Frontend (Interface)**
 
 | التقنية | الغرض |
 |---------|-------|
@@ -82,9 +81,9 @@
 
 ---
 
-## 📊 قاعدة البيانات (Database Schema)
+## 📊 Esquema do Banco de Dados (Database Schema)
 
-### **النماذج (Models):**
+### **Modelos (Models):**
 
 #### 1. **User (المستخدم)**
 ```javascript
@@ -151,19 +150,21 @@
 
 ---
 
-## 🔐 الأمان (Security)
+## 🔐 Segurança (Security)
 
-### **التدابير الأمنية:**
+### **Medidas de Segurança:**
 
 | التدبير | التطبيق |
 |---------|---------|
 | **JWT Authentication** | رموز JWT منتهية الصلاحية (8 ساعات) |
-| **Password Hashing** | bcrypt بـ 10 rounds |
+| **Password Hashing** | bcrypt بـ 12 rounds (تشفير محسّن) |
 | **Role-Based Access** | 3 مستويات صلاحيات (admin, operador, consulta) |
-| **Input Validation** | express-validator لجميع المدخلات |
+| **Input Validation** | express-validator + Joi لجميع المدخلات مع sanitization |
 | **CORS** | تكوين Cross-Origin Resource Sharing |
 | **Error Handling** | معالجة مركزية للأخطاء بدون كشف تفاصيل حساسة |
 | **ACID Transactions** | Mongoose Sessions للعمليات الحرجة |
+| **Rate Limiting** | حماية من هجمات Brute Force على نقطة الدخول |
+| **XSS Protection** | sanitize-html + helmet لتأمين الـ Headers |
 
 ---
 
@@ -200,6 +201,49 @@ GET    /api/fornecedores           - جلب الموردين
 POST   /api/fornecedores           - إضافة مورد
 ```
 
+### **المستخدمين (Users):**
+```
+GET    /api/users                  - جلب جميع المستخدمين (admin فقط)
+POST   /api/users                  - إضافة مستخدم جديد (admin فقط)
+PATCH  /api/users/:id/status       - تفعيل/تعطيل مستخدم (admin فقط)
+```
+
+---
+
+## 🌐 أسس النظم الموزعة (Fundamentos de Sistemas Distribuídos)
+
+تم تصميم هذا النظام ليحاكي بيئة موزعة حقيقية، مع التركيز على الخصائص التالية:
+
+### 1. **Concorrência (التزامن)**
+- يعتمد النظام على بيئة **Node.js** التي تتميز بـ **Event Loop** غير المتزامن (Asynchronous).
+- يسمح هذا التصميم بالتعامل مع آلاف الطلبات المتزامنة من عملاء مختلفين دون توقف (Non-blocking I/O).
+- يتم ضمان سلامة البيانات عند التحديث المتزامن للمخزون باستخدام عمليات **Atomic Updates** في MongoDB ($inc).
+
+### 2. **Transparência (الشفافية)**
+- **شفافية الموقع:** العميل يتصل بـ API موحد ولا يحتاج لمعرفة ما إذا كانت قاعدة بيانات MongoDB تعمل محلياً أو في سحابة (MongoDB Atlas).
+- **شفافية الوصول:** يتم تبادل البيانات بصيغة JSON القياسية عبر HTTP، مما يجعل التفاعل مستقلاً عن تفاصيل التخزين.
+
+### 3. **Escalabilidade (القابلية للتوسع)**
+- **توسع أفقي:** يمكن تشغيل عدة مثيلات من خادم Node.js واستخدام Load Balancer لتوزيع الأحمال.
+- **توسع البيانات:** MongoDB مصمم أساساً للتوسع عبر الـ Sharding لتوزيع البيانات على عدة خوادم.
+
+### 4. **Tratamento de Falhas (التعامل مع الإخفاقات)**
+- يستخدم النظام Middleware مخصص لمعالجة الأخطاء، حيث يتم إرجاع رسائل خطأ JSON واضحة في حال تعطل قاعدة البيانات أو وجود خطأ في الطلب.
+
+---
+
+## 🏗️ نموذج قاعدة البيانات (MongoDB Schema)
+
+تم استخدام هيكل مستندات (Documents) مرن مع ضمان النزاهة:
+
+- **Users:** (Nome, Email, Senha, Perfil)
+- **Pecas:** (Codigo, Nome, Preco_Venda, Estoque_Atual, Estoque_Minimo, Categoria_ID, Fornecedor_ID)
+- **Movimentacoes:** (Peca_ID, Tipo, Quantidade, Motivo, Criado_Em) -> علاقة مرجعية (Reference) مع مجموعة Pecas.
+
+### **ضمان النزاهة (Integridade):**
+يتم التحقق برمجياً (Server-side) من توفر الكمية الكافية قبل تسجيل أي "saida"، لضمان عدم وصول المخزون لقيم سالبة.
+```
+
 ---
 
 ## 📱 صفحات النظام
@@ -229,6 +273,14 @@ POST   /api/fornecedores           - إضافة مورد
 ### **5. التقارير (Reports)**
 - رسم بياني (Bar) لعدد الحركات
 - رسم بياني (Doughnut) بالتوزيع
+
+### **6. إدارة المستخدمين (Users Management)**
+- جدول جميع المستخدمين (admin فقط)
+- إضافة مستخدم جديد مع تحديد الصلاحية
+- تفعيل/تعطيل حساب المستخدم
+- تغيير صلاحية المستخدم (admin ↔ operador ↔ consulta)
+- حذف المستخدمين
+- عرض حالة الحساب (نشط/معطل)
 
 ---
 
@@ -330,6 +382,9 @@ POST   /api/fornecedores           - إضافة مورد
 ✅ GET /pecas?estoque=baixo - المخزون المنخفض
 ✅ GET /categorias - التصنيفات
 ✅ GET /fornecedores - الموردين
+✅ GET /users - جلب المستخدمين (admin)
+✅ POST /users - إضافة مستخدم جديد
+✅ PATCH /users/:id/status - تفعيل/تعطيل مستخدم
 ```
 
 ### **أداة الاختبار:**
@@ -378,7 +433,12 @@ https://github.com/MamdouhAlsaodi/AutoPart-SyncDistributed
 | قطع غيار | 8 |
 | تصنيفات | 4 |
 | موردين | 2 |
-| مستخدمين | 2 |
+| مستخدمين | 3 |
+
+**المستخدمين:**
+- Admin (admin@autopecas.com) - صلاحية: admin
+- Operador (operador@autopecas.com) - صلاحية: operador
+- Consulta (consulta@autopecas.com) - صلاحية: consulta
 
 **التصنيفات:**
 - Motor (المحرك)
@@ -433,6 +493,6 @@ https://github.com/MamdouhAlsaodi/AutoPart-SyncDistributed
 
 ---
 
-**تاريخ التقرير:** 23 أبريل 2026
-**الإصدار:** 1.0
+**تاريخ التقرير:** 19 مايو 2026
+**الإصدار:** 2.0
 **الحالة:** ✅ Production Ready

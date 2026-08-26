@@ -1,0 +1,17 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const { connect, close } = require('../src/config/db');
+const { createApp } = require('../src/app');
+const Part = require('../src/models/Part');
+const User = require('../src/models/User');
+const Order = require('../src/models/Order');
+const URI = 'mongodb://127.0.0.1:27018/autopart_fase1_test';
+let server;
+test.before(async () => { if (process.env.MONGODB_URI !== URI) throw new Error('isolated test URI required'); await connect(URI); await mongoose.connection.dropDatabase(); const app = createApp(); server = app.listen(0); });
+test.after(async () => { if (server) await new Promise(resolve => server.close(resolve)); await close(); });
+test('part compatibility validation and persistence', async () => { await assert.rejects(() => Part.create({ codigo: 'BAD', nome: 'Bad', preco_custo: 1, preco_venda: 2, compatibilidades: [{ marca: '', modelo: 'X', anos: [2020] }] })); const p = await Part.create({ codigo: 'OK', nome: 'Good', preco_custo: 1, preco_venda: 2, compatibilidades: [{ marca: 'Ford', modelo: 'Fiesta', anos: [2020] }] }); assert.equal(p.compatibilidades[0].marca, 'Ford'); });
+test('registration is safe and normalized', async () => { const res = await fetch('http://127.0.0.1:' + server.address().port + '/api/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nome: 'Cliente', email: ' C@Example.COM ', password: 'secret6' }) }); const body = await res.json(); assert.equal(res.status, 201); assert.equal(body.user.email, 'c@example.com'); assert.equal(body.user.perfil, 'cliente'); assert.equal(await bcrypt.compare('secret6', (await User.findOne({ email: 'c@example.com' })).senha), true); assert.equal(JSON.stringify(body).match(/senha|password|hash/i), null); });
+test('order snapshot validates canonical fields', async () => { const u = await User.findOne({ email: 'c@example.com' }); const p = await Part.findOne({ codigo: 'OK' }); const order = await Order.create({ customerId: u._id, items: [{ partId: p._id, partCode: p.codigo, partName: p.nome, unitPrice: 2, quantity: 1 }], total: 2 }); assert.equal(order.status, 'pendente'); assert.ok(order.criado_em); await assert.rejects(() => Order.create({ customerId: u._id, items: [{ partId: p._id, partCode: p.codigo, partName: p.nome, unitPrice: 2, quantity: 0 }], total: 0 })); });
+test('catalogue public and parts protected', async () => { const base = 'http://127.0.0.1:' + server.address().port; assert.equal((await fetch(base + '/api/catalogo')).status, 200); assert.equal((await fetch(base + '/api/pecas', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })).status, 401); const login = await fetch(base + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'c@example.com', password: 'secret6' }) }); const { token } = await login.json(); assert.equal((await fetch(base + '/api/pecas', { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: '{}' })).status, 403); });

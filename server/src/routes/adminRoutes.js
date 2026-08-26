@@ -1,0 +1,15 @@
+const express = require('express');
+const PartsController = require('../controllers/PartsController');
+const OrdersController = require('../controllers/OrdersController');
+const { authMiddleware, permissionMiddleware } = require('../middleware/auth');
+const router = express.Router();
+router.use(authMiddleware, permissionMiddleware(['admin']));
+router.get('/products', PartsController.adminList);
+router.post('/products', PartsController.adminCreate);
+router.get('/products/:id', PartsController.adminDetail);
+router.patch('/products/:id', PartsController.adminUpdate);
+router.delete('/products/:id', PartsController.adminDelete);
+router.get('/orders', OrdersController.adminList);
+router.get('/orders/:id', OrdersController.adminDetail);
+router.patch('/orders/:id/status', OrdersController.adminUpdateStatus);
+module.exports = router;

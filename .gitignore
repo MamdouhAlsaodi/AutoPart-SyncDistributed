@@ -1,0 +1,40 @@
+# Dependências
+node_modules/
+**/node_modules/
+
+# Segredos e configuração local
+.env*
+!.env.example
+
+# Logs e saídas de execução
+*.log
+logs/
+worker-output/
+worker-output-logs/
+
+# Temporários, cobertura e builds
+.tmp/
+tmp/
+coverage/
+.nyc_output/
+dist/
+build/
+.cache/
+playwright-report/
+test-results/
+
+# Orquestração privada (manter compose.yaml público)
+compose.private*.yaml
+docker-compose.private*.yml
+docker-compose.private*.yaml
+
+# IDE e sistema operacional
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Relatórios internos de execução
+docs/evidence/*-worker-report.md

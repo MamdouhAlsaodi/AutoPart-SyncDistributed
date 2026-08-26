@@ -1,0 +1,28 @@
+services:
+  mongodb:
+    image: mongo:7
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --port 27017 --eval \"try { if (rs.status().myState === 1) quit(0); quit(1) } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}); quit(1) }\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  mongodb-test:
+    image: mongo:7
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
+    ports:
+      - "127.0.0.1:27018:27018"
+    volumes:
+      - mongodb-test-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --port 27018 --eval \"try { if (rs.status().myState === 1) quit(0); quit(1) } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27018'}]}); quit(1) }\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  mongodb-data:
+  mongodb-test-data:

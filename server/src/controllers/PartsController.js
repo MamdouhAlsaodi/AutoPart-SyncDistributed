@@ -1,48 +1,24 @@
+const mongoose = require('mongoose');
 const Peca = require('../models/Part');
 const Movimentacao = require('../models/Movement');
-const mongoose = require('mongoose');
-
+const PUBLIC_FIELDS = ['_id','codigo','nome','descricao','categoria','preco_venda','estoque_atual','compatibilidades','imagem_referencia'];
+const ADMIN_FIELDS = ['codigo','nome','descricao','preco_venda','estoque_atual','estoque_minimo','categoria_id','fornecedor_id','compatibilidades','imagem_referencia'];
+const QUERY_KEYS = ['busca','marca','modelo','categoria'];
+function queryValue(value) { if (value === undefined) return null; if (typeof value !== 'string') throw new Error('Parâmetro de consulta inválido'); const v=value.trim(); if (!v||v.length>100) throw new Error('Parâmetro de consulta inválido'); return v; }
+function text(v) { return typeof v === 'string' ? v.toLocaleLowerCase() : ''; }
+function project(part) { const category=part.categoria_id&&typeof part.categoria_id==='object'?part.categoria_id.nome:null; return {id:String(part._id),_id:part._id,codigo:part.codigo,nome:part.nome,descricao:part.descricao,categoria:category,preco_venda:part.preco_venda,estoque_atual:part.estoque_atual,compatibilidades:part.compatibilidades||[],...(part.imagem_referencia?{imagem_referencia:part.imagem_referencia}:{})}; }
+const fail=(res,status,mensagem)=>res.status(status).json({erro:true,codigo:status,mensagem});
+function validBody(body, allowEmpty=false) { if (!body||typeof body!=='object'||Array.isArray(body)||(!allowEmpty&&Object.keys(body).length===0)||Object.keys(body).some(k=>!ADMIN_FIELDS.includes(k))) throw new Error('Payload inválido'); if ('categoria_id' in body&&body.categoria_id!==null&&!mongoose.Types.ObjectId.isValid(body.categoria_id)) throw new Error('ID inválido'); if ('fornecedor_id' in body&&body.fornecedor_id!==null&&!mongoose.Types.ObjectId.isValid(body.fornecedor_id)) throw new Error('ID inválido'); for(const k of ['preco_venda','estoque_atual','estoque_minimo']) if(k in body&&(!Number.isFinite(body[k])||!Number.isInteger(body[k])&&k!=='preco_venda'||body[k]<0)) throw new Error('Valor numérico inválido'); }
 class PartsController {
-    async getAll(req, res) {
-        try {
-            const { busca, categoria_id, estoque } = req.query;
-            let filter = { ativo: true };
-            if (busca) filter.$or = [{ nome: new RegExp(busca, 'i') }, { codigo: new RegExp(busca, 'i') }];
-            if (categoria_id) filter.categoria_id = categoria_id;
-
-            let parts;
-            if (estoque === 'baixo') {
-                // Low stock: where estoque_atual <= estoque_minimo
-                parts = await Peca.find({ ...filter, $expr: { $lte: ['$estoque_atual', '$estoque_minimo'] } })
-                    .populate('categoria_id', 'nome').populate('fornecedor_id', 'nome').sort('nome');
-            } else {
-                parts = await Peca.find(filter).populate('categoria_id', 'nome').populate('fornecedor_id', 'nome').sort('nome');
-            }
-
-            // Format for client
-            const data = parts.map(p => ({
-                ...p.toObject(),
-                categoria: p.categoria_id?.nome || null,
-                fornecedor: p.fornecedor_id?.nome || null
-            }));
-            res.json({ data, count: data.length });
-        } catch (err) { res.status(500).json({ erro: true, mensagem: err.message }); }
-    }
-
-    async getById(req, res) {
-        try {
-            const part = await Peca.findById(req.params.id).populate('categoria_id').populate('fornecedor_id');
-            if (!part) return res.status(404).json({ erro: true, mensagem: 'Peça não encontrada' });
-            res.json(part);
-        } catch (err) { res.status(500).json({ erro: true, mensagem: err.message }); }
-    }
-
-    async create(req, res) {
-        try {
-            const part = await Peca.create(req.body);
-            res.status(201).json({ mensagem: 'Peça cadastrada com sucesso', data: part });
-        } catch (err) { res.status(400).json({ erro: true, mensagem: err.message }); }
-    }
+ async getAll(req,res){try{const {busca,categoria_id,estoque}=req.query;let filter={ativo:true};if(busca)filter.$or=[{nome:new RegExp(busca,'i')},{codigo:new RegExp(busca,'i')}];if(categoria_id)filter.categoria_id=categoria_id;const parts=await Peca.find(estoque==='baixo'?{...filter,$expr:{$lte:['$estoque_atual','$estoque_minimo']}}:filter).populate('categoria_id','nome').populate('fornecedor_id','nome').sort('nome');const data=parts.map(p=>({...p.toObject(),categoria:p.categoria_id?.nome||null,fornecedor:p.fornecedor_id?.nome||null}));res.json({data,count:data.length});}catch(e){fail(res,500,e.message);}}
+ async getPublicCatalogue(req,res){try{const filters=Object.fromEntries(QUERY_KEYS.map(k=>[k,queryValue(req.query[k])]));const parts=await Peca.find({ativo:true}).populate('categoria_id','nome').sort('nome').lean();const data=parts.map(project).filter(p=>{const compat=(p.compatibilidades||[]).map(i=>`${i.marca||''} ${i.modelo||''}`);const search=[p.nome,...compat,p.categoria].map(text).join(' ');return(!filters.busca||search.includes(text(filters.busca)))&&(!filters.marca||(p.compatibilidades||[]).some(i=>text(i.marca).includes(text(filters.marca))))&&(!filters.modelo||(p.compatibilidades||[]).some(i=>text(i.modelo).includes(text(filters.modelo))))&&(!filters.categoria||text(p.categoria).includes(text(filters.categoria)));});res.json({data,count:data.length});}catch(e){fail(res,e.message.includes('Parâmetro')?400:500,e.message);}}
+ async getPublicCatalogueDetail(req,res){try{const p=await Peca.findOne({_id:req.params.id,ativo:true}).populate('categoria_id','nome').lean();if(!p)return fail(res,404,'Peça não encontrada');res.json({data:project(p)});}catch(e){fail(res,404,'Peça não encontrada');}}
+ async getById(req,res){try{const p=await Peca.findById(req.params.id).populate('categoria_id').populate('fornecedor_id');if(!p)return fail(res,404,'Peça não encontrada');res.json(p);}catch(e){fail(res,500,e.message);}}
+ async create(req,res){try{const p=await Peca.create(req.body);res.status(201).json({mensagem:'Peça cadastrada com sucesso',data:p});}catch(e){fail(res,400,e.message);}}
+ async adminList(req,res){const ps=await Peca.find({}).populate('categoria_id','nome').populate('fornecedor_id','nome').sort('nome');res.json({data:ps.map(p=>p.toObject()),count:ps.length});}
+ async adminCreate(req,res){try{validBody(req.body);const p=await Peca.create({...req.body,preco_custo:0});res.status(201).json({data:p});}catch(e){fail(res,400,e.message);}}
+ async adminDetail(req,res){try{const p=await Peca.findById(req.params.id);if(!p)return fail(res,404,'Peça não encontrada');res.json({data:p});}catch(e){fail(res,404,'Peça não encontrada');}}
+ async adminUpdate(req,res){try{validBody(req.body);const p=await Peca.findById(req.params.id);if(!p)return fail(res,404,'Peça não encontrada');const old=p.estoque_atual; if('estoque_atual' in req.body&&req.body.estoque_atual!==old){const delta=req.body.estoque_atual-old;const session=await mongoose.startSession();try{await session.withTransaction(async()=>{Object.assign(p,req.body);await p.save({session});await Movimentacao.create([{tipo:delta>0?'entrada':'saida',quantidade:Math.abs(delta),motivo:'Ajuste administrativo de estoque',peca_id:p._id,usuario_id:req.user.id}],{session});});}finally{await session.endSession();}}else{Object.assign(p,req.body);await p.save();}res.json({data:p});}catch(e){fail(res,e.status||400,e.message);}}
+ async adminDelete(req,res){try{const p=await Peca.findByIdAndUpdate(req.params.id,{ativo:false},{new:true});if(!p)return fail(res,404,'Peça não encontrada');res.json({data:p});}catch(e){fail(res,404,'Peça não encontrada');}}
 }
-
-module.exports = new PartsController();
+module.exports=new PartsController();

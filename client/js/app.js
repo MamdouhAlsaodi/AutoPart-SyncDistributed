@@ -3,170 +3,29 @@ const App = {
 
     async init() {
         const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                this.state.user = await api.me();
-                this.go('dashboard');
-                // Auto seed database if empty
-                if (this.state.user?.perfil === 'admin') {
-                    await this.autoSeedIfNeeded();
-                }
-            } catch { localStorage.removeItem('token'); this.go('login'); }
-        } else { this.go('login'); }
+        if (token) { try { this.state.user = await api.me(); this.go(this.state.user?.perfil === 'admin' ? 'admin-management' : 'storefront'); } catch { localStorage.removeItem('token'); this.go('storefront'); } }
+        else this.go('storefront');
         document.getElementById('loading-screen')?.remove();
     },
 
-    async autoSeedIfNeeded() {
-        try {
-            const [partsRes, historyRes] = await Promise.all([
-                api.getParts(),
-                api.getHistory()
-            ]);
-            const partsList = partsRes.data || partsRes || [];
-            const historyList = historyRes.data || historyRes || [];
-
-            if (historyList.length === 0) {
-                console.log("AutoPart-SyncDistributed: Initializing client-side database auto-seeding...");
-
-                // 1. Categories
-                const cats = await api.getCategories();
-                const requiredCats = ['Motor', 'Freios', 'Elétrica', 'Suspensão', 'Transmissão'];
-                for (const catName of requiredCats) {
-                    if (!cats.some(c => c.nome.toLowerCase() === catName.toLowerCase())) {
-                        try {
-                            const createCat = await api.createCategory({ nome: catName });
-                            const newCat = createCat.data || createCat;
-                            if (newCat && newCat._id) cats.push(newCat);
-                        } catch (err) { console.error('Error seeding category:', catName, err); }
-                    }
-                }
-
-                // 2. Suppliers
-                const sups = await api.getSuppliers();
-                const requiredSups = [
-                    { nome: 'Distribuidora Bosch Brasil', cnpj: '11.111.111/0001-11', email: 'vendas@bosch.com.br', telefone: '(11) 4004-1111' },
-                    { nome: 'Fremax Sistemas de Freio', cnpj: '22.222.222/0001-22', email: 'contato@fremax.com.br', telefone: '(47) 3444-2222' },
-                    { nome: 'Nakasa Autopeças', cnpj: '33.333.333/0001-33', email: 'comercial@nakasa.com.br', telefone: '(11) 5555-3333' }
-                ];
-                for (const sup of requiredSups) {
-                    if (!sups.some(s => s.nome.toLowerCase() === sup.nome.toLowerCase())) {
-                        try {
-                            const createSup = await api.createSupplier(sup);
-                            const newSup = createSup.data || createSup;
-                            if (newSup && newSup._id) sups.push(newSup);
-                        } catch (err) { console.error('Error seeding supplier:', sup.nome, err); }
-                    }
-                }
-
-                // 3. Users
-                const users = await api.getUsers();
-                const requiredUsers = [
-                    { nome: 'Carlos Silva', email: 'carlos.operador@autopecas.com', password: 'carlospassword', perfil: 'operador' },
-                    { nome: 'Ana Souza', email: 'ana.consulta@autopecas.com', password: 'anapassword', perfil: 'consulta' },
-                    { nome: 'José Oliveira', email: 'jose.gerente@autopecas.com', password: 'josepassword', perfil: 'admin' },
-                    { nome: 'Mariana Costa', email: 'mariana.vendas@autopecas.com', password: 'marianapassword', perfil: 'operador' },
-                    { nome: 'Ricardo Santos', email: 'ricardo.auditor@autopecas.com', password: 'ricardopassword', perfil: 'consulta' }
-                ];
-                for (const user of requiredUsers) {
-                    if (!users.some(u => u.email.toLowerCase() === user.email.toLowerCase())) {
-                        try {
-                            const createUser = await api.createUser(user);
-                            if (createUser && createUser._id) users.push(createUser);
-                        } catch (err) { console.error('Error seeding user:', user.nome, err); }
-                    }
-                }
-
-                // Refresh users to get correct IDs
-                const freshUsers = await api.getUsers();
-
-                // 4. Parts
-                const catMotor = cats.find(c => c.nome.toLowerCase() === 'motor') || cats[0];
-                const catFreios = cats.find(c => c.nome.toLowerCase() === 'freios') || cats[0];
-                const catEletrica = cats.find(c => c.nome.toLowerCase() === 'elétrica') || cats[0];
-                const catSuspensao = cats.find(c => c.nome.toLowerCase() === 'suspensão') || cats[0];
-                const catTransmissao = cats.find(c => c.nome.toLowerCase() === 'transmissão') || cats[0];
-
-                const supBosch = sups.find(s => s.nome.toLowerCase().includes('bosch')) || sups[0];
-                const supFremax = sups.find(s => s.nome.toLowerCase().includes('fremax')) || sups[0];
-                const supNakasa = sups.find(s => s.nome.toLowerCase().includes('nakasa')) || sups[0];
-
-                const requiredParts = [
-                    { codigo: 'PF-001', nome: 'Pastilha de Freio Bosch', descricao: 'Pastilha de freio cerâmica premium', preco_custo: 95.00, preco_venda: 189.90, estoque_atual: 18, estoque_minimo: 10, categoria_id: catFreios._id, fornecedor_id: supBosch._id },
-                    { codigo: 'DF-002', nome: 'Disco de Freio Fremax', descricao: 'Disco de freio dianteiro ventilado', preco_custo: 120.00, preco_venda: 249.00, estoque_atual: 4, estoque_minimo: 6, categoria_id: catFreios._id, fornecedor_id: supBosch._id },
-                    { codigo: 'BA-003', nome: 'Bomba de Água Urba', descricao: 'Bomba de água para motores flex', preco_custo: 90.00, preco_venda: 198.50, estoque_atual: 3, estoque_minimo: 5, categoria_id: catMotor._id, fornecedor_id: supFremax._id },
-                    { codigo: 'CD-004', nome: 'Correia Dentada Gates', descricao: 'Correia sincronizadora reforçada', preco_custo: 40.00, preco_venda: 85.00, estoque_atual: 25, estoque_minimo: 8, categoria_id: catMotor._id, fornecedor_id: supFremax._id },
-                    { codigo: 'FO-005', nome: 'Filtro de Óleo Fram', descricao: 'Filtro de óleo blindado de alta vazão', preco_custo: 15.00, preco_venda: 34.90, estoque_atual: 42, estoque_minimo: 15, categoria_id: catMotor._id, fornecedor_id: supBosch._id },
-                    { codigo: 'AL-006', nome: 'Alternador Valeo 12V', descricao: 'Alternador de 90 amperes completo', preco_custo: 420.00, preco_venda: 850.00, estoque_atual: 2, estoque_minimo: 3, categoria_id: catEletrica._id, fornecedor_id: supFremax._id },
-                    { codigo: 'BT-007', nome: 'Bateria Moura 60Ah', descricao: 'Bateria Moura livre de manutenção', preco_custo: 230.00, preco_venda: 489.90, estoque_atual: 12, estoque_minimo: 5, categoria_id: catEletrica._id, fornecedor_id: supNakasa._id },
-                    { codigo: 'VI-008', nome: 'Vela de Ignição NGK', descricao: 'Vela de ignição Iridium resistiva', preco_custo: 12.00, preco_venda: 29.90, estoque_atual: 64, estoque_minimo: 20, categoria_id: catEletrica._id, fornecedor_id: supNakasa._id },
-                    { codigo: 'AM-009', nome: 'Amortecedor Monroe', descricao: 'Amortecedor dianteiro pressurizado a gás', preco_custo: 180.00, preco_venda: 389.00, estoque_atual: 5, estoque_minimo: 8, categoria_id: catSuspensao._id, fornecedor_id: supFremax._id },
-                    { codigo: 'PV-010', nome: 'Pivô de Suspensão Nakata', descricao: 'Pivô da bandeja de suspension dianteira', preco_custo: 50.00, preco_venda: 110.00, estoque_atual: 14, estoque_minimo: 6, categoria_id: catSuspensao._id, fornecedor_id: supBosch._id },
-                    { codigo: 'KE-011', nome: 'Kit de Embreagem LUK', descricao: 'Kit com platô, disco e rolamento', preco_custo: 310.00, preco_venda: 620.00, estoque_atual: 2, estoque_minimo: 4, categoria_id: catTransmissao._id, fornecedor_id: supFremax._id },
-                    { codigo: 'JH-012', nome: 'Junta Homocinética Cofap', descricao: 'Junta homocinética lado roda dianteiro', preco_custo: 80.00, preco_venda: 175.00, estoque_atual: 8, estoque_minimo: 4, categoria_id: catTransmissao._id, fornecedor_id: supBosch._id },
-                    { codigo: 'FA-013', nome: 'Filtro de Ar Tecfil', descricao: 'Filtro de ar do motor lavável', preco_custo: 18.00, preco_venda: 42.00, estoque_atual: 30, estoque_minimo: 10, categoria_id: catMotor._id, fornecedor_id: supBosch._id },
-                    { codigo: 'RD-014', nome: 'Radiador Denso', descricao: 'Radiador de água de alumínio brasado', preco_custo: 200.00, preco_venda: 410.00, estoque_atual: 1, estoque_minimo: 2, categoria_id: catMotor._id, fornecedor_id: supBosch._id },
-                    { codigo: 'SA-015', nome: 'Sensor de ABS Bosch', descricao: 'Sensor de velocidade ABS roda dianteira', preco_custo: 70.00, preco_venda: 145.00, estoque_atual: 7, estoque_minimo: 4, categoria_id: catEletrica._id, fornecedor_id: supBosch._id }
-                ];
-
-                const parts = [...partsList];
-                for (const p of requiredParts) {
-                    if (!parts.some(x => x.codigo === p.codigo)) {
-                        try {
-                            const createPart = await api.createPart(p);
-                            const newPart = createPart.data || createPart;
-                            if (newPart && newPart._id) parts.push(newPart);
-                        } catch (err) { console.error('Error seeding part:', p.nome, err); }
-                    }
-                }
-
-                // 5. Movements
-                const opUser = freshUsers.find(u => u.perfil === 'operador') || this.state.user;
-                const adminUser = freshUsers.find(u => u.perfil === 'admin') || this.state.user;
-
-                const movementsToCreate = [
-                    { peca_codigo: 'PF-001', tipo: 'entrada', quantidade: 20, motivo: 'Compra de estoque do distribuidor Bosch Brasil', user: opUser },
-                    { peca_codigo: 'BT-007', tipo: 'saida', quantidade: 2, motivo: 'Venda para oficina mecânica AutoCenter', user: opUser },
-                    { peca_codigo: 'FO-005', tipo: 'entrada', quantidade: 50, motivo: 'Reposição de estoque via importadora', user: adminUser },
-                    { peca_codigo: 'AM-009', tipo: 'saida', quantidade: 4, motivo: 'Ordem de serviço nº 4983', user: opUser },
-                    { peca_codigo: 'DF-002', tipo: 'saida', quantidade: 2, motivo: 'Venda direta ao cliente no balcão', user: opUser },
-                    { peca_codigo: 'AL-006', tipo: 'entrada', quantidade: 5, motivo: 'Entrada de devolução de garantia de cliente', user: adminUser },
-                    { peca_codigo: 'VI-008', tipo: 'saida', quantidade: 16, motivo: 'Venda atacado para Auto Elétrica Silva', user: opUser },
-                    { peca_codigo: 'CD-004', tipo: 'entrada', quantidade: 15, motivo: 'Compra local para reposição urgente', user: opUser },
-                    { peca_codigo: 'KE-011', tipo: 'saida', quantidade: 1, motivo: 'Ordem de serviço nº 4991', user: opUser },
-                    { peca_codigo: 'PV-010', tipo: 'saida', quantidade: 4, motivo: 'Instalação na oficina interna', user: opUser },
-                    { peca_codigo: 'RD-014', tipo: 'entrada', quantidade: 3, motivo: 'Importação direta Lote B', user: adminUser },
-                    { peca_codigo: 'SA-015', tipo: 'saida', quantidade: 2, motivo: 'Venda Balcão', user: opUser },
-                    { peca_codigo: 'JH-012', tipo: 'entrada', quantidade: 10, motivo: 'Ajuste de inventário anual', user: adminUser },
-                    { peca_codigo: 'PF-001', tipo: 'saida', quantidade: 2, motivo: 'Venda direta', user: opUser },
-                    { peca_codigo: 'FA-013', tipo: 'saida', quantidade: 5, motivo: 'Ordem de serviço nº 4995', user: opUser }
-                ];
-
-                for (const mov of movementsToCreate) {
-                    const part = parts.find(p => p.codigo === mov.peca_codigo);
-                    if (!part) continue;
-                    const apiCall = mov.tipo === 'entrada' ? api.recordEntry : api.recordExit;
-                    try {
-                        await apiCall({
-                            peca_id: part._id,
-                            quantidade: mov.quantidade,
-                            motivo: mov.motivo,
-                            usuario_id: mov.user._id
-                        });
-                    } catch (err) { console.error('Error seeding movement:', mov, err); }
-                }
-
-                console.log("AutoPart-SyncDistributed: Seeding complete! Refreshing display.");
-                this.go(this.state.page);
-            }
-        } catch (err) {
-            console.error('Auto seeding failed:', err);
-        }
+    async pageStorefront() {
+        document.getElementById('app').innerHTML = `<header class="store-header"><strong>AutoPart</strong><nav><a href="#catalogo">Catálogo</a><button id="cart-entry">Carrinho (<span id="cart-count">0</span>)</button><span id="cart-status" role="status" aria-live="polite"></span><button id="account-entry">Minha conta</button><button id="admin-entry">Área administrativa</button></nav></header><main class="storefront"><section class="hero"><h1>Peças certas para seu veículo</h1><p>Consulte nosso catálogo de autopeças com dados reais e disponibilidade atual.</p></section><section class="featured-section" aria-labelledby="featured-title"><h2 id="featured-title">Destaques</h2><p id="featured-state" role="status">Carregando destaques...</p><div id="featured-grid" class="featured-grid"></div></section><section id="catalogo" class="catalogue-section"><form id="catalogue-filters"><label>Buscar <input name="busca" autocomplete="off"></label><label>Marca <input name="marca"></label><label>Modelo <input name="modelo"></label><label>Categoria <input name="categoria"></label><button>Filtrar</button></form><p id="catalogue-state" role="status">Carregando catálogo...</p><div id="catalogue-grid" class="product-grid"></div></section></main><footer>AutoPart — catálogo público</footer><div id="product-modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-card"><button id="close-modal" aria-label="Fechar">×</button><div id="product-detail"></div></div></div>`;
+        if (this.state.user?.perfil === 'cliente') { const account = document.getElementById('account-entry'); account.textContent = this.escape(this.state.user.nome || 'Minha conta'); account.onclick = () => this.go('account'); const logout = document.createElement('button'); logout.id = 'logout-entry'; logout.textContent = 'Sair'; logout.onclick = () => this.logout(); account.after(logout); const orders = document.createElement('button'); orders.id = 'orders-entry'; orders.textContent = 'Meus pedidos'; orders.onclick = () => this.go('orders'); account.after(orders); } else { document.getElementById('account-entry').textContent = 'Entrar / cadastrar'; document.getElementById('account-entry').onclick = () => this.go('account'); } document.getElementById('cart-entry').onclick = () => this.go('cart'); document.getElementById('admin-entry').onclick = () => this.go('login'); this.updateCartCount();
+        document.getElementById('catalogue-filters').onsubmit = e => { e.preventDefault(); this.loadCatalogue(new FormData(e.target)); };
+        document.getElementById('close-modal').onclick = () => document.getElementById('product-modal').classList.add('hidden');
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('product-modal')?.classList.add('hidden'); }, { once: true });
+        await this.loadCatalogue();
     },
+    escape(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+    async loadCatalogue(form) { const state = document.getElementById('catalogue-state'), grid = document.getElementById('catalogue-grid'), featuredState = document.getElementById('featured-state'), featuredGrid = document.getElementById('featured-grid'); if (!state || !grid) return; state.textContent = 'Carregando catálogo...'; if (featuredState) featuredState.textContent = 'Carregando destaques...'; if (featuredGrid) featuredGrid.innerHTML = ''; try { const params = form ? Object.fromEntries([...form].filter(([,v]) => v.trim())) : {}; const result = await api.getCatalogue(params); const items = result.data || []; state.textContent = items.length ? `${result.count} produtos encontrados` : 'Nenhum produto encontrado.'; grid.innerHTML = items.map(p => `<article class="product-card"><h2>${this.escape(p.nome)}</h2><p>${this.escape(p.descricao)}</p><small>${this.escape(p.categoria || 'Sem categoria')} · ${this.escape(p.codigo)}</small><strong>R$ ${Number(p.preco_venda).toFixed(2)}</strong><button data-id="${this.escape(p.id || p._id)}">Ver detalhes</button><button class="add-cart" data-product='${this.escape(JSON.stringify({id:p.id || p._id,nome:p.nome,preco_venda:p.preco_venda}))}'>Adicionar ao carrinho</button></article>`).join(''); if (featuredState && featuredGrid) { featuredState.textContent = items.length ? 'Produtos selecionados do catálogo atual.' : 'Nenhum destaque disponível.'; featuredGrid.innerHTML = items.slice(0, 3).map(p => `<article class="featured-card"><h3>${this.escape(p.nome)}</h3><p>${this.escape(p.descricao)}</p><small>${this.escape(p.categoria || 'Sem categoria')}</small></article>`).join(''); } grid.querySelectorAll('[data-id]').forEach(b => b.onclick = () => this.showProduct(b.dataset.id)); grid.querySelectorAll('.add-cart').forEach(b => b.onclick = () => { Cart.addProduct(JSON.parse(b.dataset.product)); this.updateCartCount(); const status = document.getElementById('cart-status'); if (status) status.textContent = 'Produto adicionado ao carrinho.'; }); } catch (e) { state.textContent = e.mensagem || 'Não foi possível carregar o catálogo.'; grid.innerHTML = ''; if (featuredState) featuredState.textContent = 'Não foi possível carregar os destaques.'; if (featuredGrid) featuredGrid.innerHTML = ''; } },
+    async showProduct(id) { try { const result = await api.getCatalogueDetail(id), p = result.data || result; const compatibilidades = Array.isArray(p.compatibilidades) ? p.compatibilidades : []; const compatibilityHtml = compatibilidades.length ? compatibilidades.map(c => `<li>${this.escape(c.marca)} ${this.escape(c.modelo)} — ${this.escape(Array.isArray(c.anos) ? c.anos.join(', ') : c.anos)}</li>`).join('') : '<li>Nenhuma compatibilidade informada.</li>'; document.getElementById('product-detail').innerHTML = `<h2>${this.escape(p.nome)}</h2><p>${this.escape(p.descricao)}</p><p>Categoria: ${this.escape(p.categoria || 'Sem categoria')}</p><p>Estoque: ${this.escape(p.estoque_atual)}</p><p>R$ ${Number(p.preco_venda).toFixed(2)}</p><h3>Compatibilidade</h3><ul>${compatibilityHtml}</ul>`; document.getElementById('product-detail').insertAdjacentHTML('beforeend', `<button id="detail-add">Adicionar ao carrinho</button>`); document.getElementById('detail-add').onclick = () => { Cart.addProduct({id:p.id || p._id,nome:p.nome,preco_venda:p.preco_venda}); this.updateCartCount(); const status = document.getElementById('cart-status'); if (status) status.textContent = 'Produto adicionado ao carrinho.'; }; document.getElementById('product-modal').classList.remove('hidden'); } catch (e) { alert(e.mensagem || 'Produto indisponível'); } },
 
     go(page) {
         this.state.page = page;
         const pages = { 
-            login: () => this.pageLogin(), 
+            storefront: () => this.pageStorefront(),
+            'admin-management': () => this.pageAdminManagement(),
+            login: () => this.pageLogin(), account: () => this.pageAccount(), cart: () => this.pageCart(), orders: () => this.pageOrders(),
             dashboard: () => this.pageDashboard(), 
             parts: () => this.pageParts(), 
             movements: () => this.pageMovements(), 
@@ -201,114 +60,45 @@ const App = {
             </nav>
             <div class="p-3 border-t border-slate-800 space-y-2">
                 <div class="px-4 py-2 mb-2"><span class="text-xs text-slate-500">${this.state.user?.nome || ''}</span><br><span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">${this.state.user?.perfil || ''}</span></div>
-                <a href="help.html" target="_blank" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i class="fas fa-question-circle w-5"></i> Ajuda & Sistema</a>
                 <button onclick="App.logout()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-all"><i class="fas fa-sign-out-alt w-5"></i> Sair</button>
             </div>
         </aside>`;
     },
 
-    // ============ LOGIN ============
-    pageLogin() {
-        document.getElementById('app').innerHTML = `
-        <div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-            <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
-                <div class="text-center mb-8">
-                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30"><i class="fas fa-cog text-white text-2xl"></i></div>
-                    <h1 class="text-2xl font-bold text-slate-900">AutoPart Sync</h1>
-                    <p class="text-slate-500 text-sm">Sistema Distribuído de Autopeças</p>
-                </div>
-                <form id="login-form" class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
-                        <input type="email" id="email" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="usuario@empresa.com">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-                        <input type="password" id="password" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••••">
-                    </div>
-                    <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2">Entrar no Sistema</button>
-                </form>
-                <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-                    <a href="help.html" target="_blank" class="text-sm text-slate-500 hover:text-blue-600 flex items-center justify-center gap-2 transition-all">
-                        <i class="fas fa-question-circle"></i> Entenda como o sistema funciona
-                    </a>
-                </div>
-            </div>
-        </div>`;
-        document.getElementById('login-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('login-btn');
-            try {
-                btn.disabled = true; btn.innerHTML = '<span class="loader"></span> Verificando...';
-                const res = await api.login({ email: document.getElementById('email').value, password: document.getElementById('password').value });
-                localStorage.setItem('token', res.token);
-                this.state.user = res.user;
-                this.go('dashboard');
-            } catch (err) { alert(err.mensagem || 'Falha na autenticação'); }
-            finally { btn.disabled = false; btn.innerHTML = 'Entrar no Sistema'; }
-        };
+    updateCartCount() { const el = document.getElementById('cart-count'); if (el) el.textContent = Cart.count(); },
+    async pageAdminManagement() {
+        if (this.state.user?.perfil !== 'admin') { this.go('storefront'); return; }
+        const app = document.getElementById('app');
+        app.innerHTML = `<main class="admin-management"><h1>Gestão administrativa</h1><p id="admin-feedback" role="status"></p><section><h2>Produtos</h2><form id="admin-product-form"><input name="codigo" required placeholder="Código"><input name="nome" required placeholder="Nome"><input name="descricao" placeholder="Descrição"><input name="preco_venda" type="number" step="0.01" required placeholder="Preço"><input name="estoque_atual" type="number" required placeholder="Estoque"><input name="estoque_minimo" type="number" placeholder="Estoque mínimo"><button>Salvar produto</button></form><div id="admin-products"></div></section><section><h2>Pedidos</h2><div id="admin-orders"></div></section></main>`;
+        const feedback = document.getElementById('admin-feedback');
+        const showError = error => { feedback.textContent = error.mensagem || 'Falha na operação'; };
+        const fields = ['codigo', 'nome', 'descricao', 'preco_venda', 'estoque_atual', 'estoque_minimo'];
+        const render = async () => { try { const [products, orders] = await Promise.all([api.admin.listProducts(), api.admin.listOrders()]);
+            document.getElementById('admin-products').innerHTML = (products.data || []).map(p => `<article><span>${this.escape(p.nome)} — R$ ${Number(p.preco_venda).toFixed(2)} · estoque ${p.estoque_atual}</span> <button data-detail-product="${p._id}">Detalhes</button> <button data-edit-product="${p._id}">Editar</button> <button data-delete-product="${p._id}">Desativar</button></article>`).join('');
+            document.getElementById('admin-orders').innerHTML = orders.map(o => `<article>Pedido ${this.escape(o.id)} — ${this.escape(o.status)} <button data-detail-order="${o.id}">Detalhes</button> <select data-status="${o.id}"><option value="">Alterar status</option><option>confirmado</option><option>em_processamento</option><option>enviado</option><option>concluido</option><option>cancelado</option></select></article>`).join('');
+            document.querySelectorAll('[data-detail-product]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getProduct(b.dataset.detailProduct); feedback.textContent = JSON.stringify(r.data || r); } catch (e) { showError(e); } });
+            document.querySelectorAll('[data-edit-product]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getProduct(b.dataset.editProduct), product = r.data || r; const payload = Object.fromEntries(fields.filter(f => product[f] !== undefined).map(f => [f, product[f]])); payload.nome = window.prompt('Nome', payload.nome) || payload.nome; await api.admin.updateProduct(b.dataset.editProduct, payload); await render(); } catch (e) { showError(e); } });
+            document.querySelectorAll('[data-delete-product]').forEach(b => b.onclick = async () => { try { await api.admin.deleteProduct(b.dataset.deleteProduct); await render(); } catch (e) { showError(e); } });
+            document.querySelectorAll('[data-detail-order]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getOrder(b.dataset.detailOrder); feedback.textContent = JSON.stringify(r); } catch (e) { showError(e); } });
+            document.querySelectorAll('[data-status]').forEach(select => select.onchange = async () => { if (select.value) try { await api.admin.updateOrderStatus(select.dataset.status, select.value); await render(); } catch (e) { showError(e); } });
+        } catch (e) { showError(e); } };
+        document.getElementById('admin-product-form').onsubmit = async e => { e.preventDefault(); try { const payload = Object.fromEntries(new FormData(e.target)); payload.preco_venda = Number(payload.preco_venda); payload.estoque_atual = Number(payload.estoque_atual); if (payload.estoque_minimo) payload.estoque_minimo = Number(payload.estoque_minimo); await api.admin.createProduct(payload); e.target.reset(); await render(); } catch (error) { showError(error); } };
+        await render();
     },
-
-    // ============ DASHBOARD ============
-    async pageDashboard() {
-        document.getElementById('app').innerHTML = `<div class="flex min-h-screen">${this.sidebar('dashboard')}<main class="flex-1 p-8 overflow-auto"><h1 class="text-3xl font-bold mb-6">Dashboard</h1><div id="dash-content" class="space-y-6"><p class="text-slate-400">Carregando...</p></div></main></div>`;
-        try {
-            const [parts, lowStock, history] = await Promise.all([api.getParts(), api.getLowStock(), api.getHistory()]);
-            const partsData = parts.data || parts;
-            const lowData = (lowStock.data || lowStock) || [];
-            const histData = (history.data || history) || [];
-
-            const entradas = histData.filter(m => m.tipo === 'entrada').length;
-            const saidas = histData.filter(m => m.tipo === 'saida').length;
-
-            document.getElementById('dash-content').innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="flex items-center gap-3 mb-1"><div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i class="fas fa-boxes"></i></div><span class="text-slate-500 text-sm">Total Peças</span></div>
-                    <p class="text-3xl font-bold">${partsData.length || 0}</p>
-                </div>
-                <div class="bg-white p-5 rounded-xl border ${lowData.length > 0 ? 'border-amber-300 bg-amber-50' : 'border-slate-200'} shadow-sm">
-                    <div class="flex items-center gap-3 mb-1"><div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i class="fas fa-exclamation-triangle"></i></div><span class="text-slate-500 text-sm">Estoque Baixo</span></div>
-                    <p class="text-3xl font-bold">${lowData.length || 0}</p>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="flex items-center gap-3 mb-1"><div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fas fa-sync"></i></div><span class="text-slate-500 text-sm">Movimentações</span></div>
-                    <p class="text-3xl font-bold">${histData.length || 0}</p>
-                </div>
-            </div>
-
-            ${lowData.length > 0 ? `<div class="bg-amber-50 border border-amber-200 rounded-xl p-4"><h3 class="font-bold text-amber-800 mb-2"><i class="fas fa-bell mr-2"></i>Alertas de Estoque</h3><div class="space-y-2">${lowData.map(p => `<div class="flex justify-between items-center bg-white p-3 rounded-lg"><span class="font-medium">${p.codigo} - ${p.nome}</span><span class="text-sm text-red-600 font-bold">${p.estoque_atual}/${p.estoque_minimo} un</span></div>`).join('')}</div></div>` : ''}
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="font-bold mb-4">Últimas Movimentações</h3>
-                    <div class="space-y-2">${histData.slice(0,8).map(m => `
-                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                            <div class="flex items-center gap-2"><i class="fas ${m.tipo==='entrada'?'fa-arrow-down text-emerald-500':'fa-arrow-up text-red-500'}"></i><span class="text-sm font-medium">${m.peca_nome||'N/A'}</span></div>
-                            <span class="text-sm font-bold ${m.tipo==='entrada'?'text-emerald-600':'text-red-600'}">${m.tipo==='entrada'?'+':'-'}${m.quantidade}</span>
-                        </div>`).join('') || '<p class="text-slate-400 text-sm">Nenhuma movimentação</p>'}</div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="font-bold mb-4">Movimentações por Tipo</h3>
-                    <canvas id="chart-movements" height="200"></canvas>
-                </div>
-            </div>`;
-
-            if (typeof Chart !== 'undefined') {
-                const ctx = document.getElementById('chart-movements');
-                if (ctx) {
-                    new Chart(ctx, {
-                        type: 'doughnut',
-                        data: { labels: ['Entradas', 'Saídas'], datasets: [{ data: [entradas, saidas], backgroundColor: ['#10b981', '#ef4444'] }] },
-                        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-                    });
-                }
-            }
-        } catch(e) {
-            console.error('Dashboard error:', e);
-            document.getElementById('dash-content').innerHTML = `<p class="text-red-500">Erro ao carregar dados: ${e.message || 'Desconhecido'}</p>`;
-        }
+    pageAccount() { this.pageLogin(true); },
+    pageLogin(account = false) {
+        document.getElementById('app').innerHTML = `<main class="auth-surface"><h1>AutoPart</h1><form id="login-form"><h2>Entrar</h2><input id="email" type="email" required placeholder="E-mail"><input id="password" type="password" required placeholder="Senha"><button>Entrar</button><p id="auth-error" role="alert"></p></form><form id="register-form"><h2>Criar conta</h2><input id="register-nome" required placeholder="Nome"><input id="register-email" type="email" required placeholder="E-mail"><input id="register-password" type="password" required minlength="6" placeholder="Senha (mínimo 6)"><input id="register-confirm" type="password" required minlength="6" placeholder="Confirme a senha"><button>Cadastrar</button></form><button id="back-store">Voltar ao catálogo</button></main>`;
+        document.getElementById('back-store').onclick = () => this.go('storefront');
+        document.getElementById('login-form').onsubmit = async e => { e.preventDefault(); try { const res = await api.login({email:email.value,password:password.value}); localStorage.setItem('token',res.token); this.state.user=res.user; this.go(res.user?.perfil === 'admin' ? 'admin-management' : res.user?.perfil === 'cliente' ? 'storefront' : 'dashboard'); } catch(err) { document.getElementById('auth-error').textContent = err.mensagem || 'Falha na autenticação'; } };
+        document.getElementById('register-form').onsubmit = async e => { e.preventDefault(); const n=document.getElementById('register-nome').value.trim(), em=document.getElementById('register-email').value.trim(), pw=document.getElementById('register-password').value, cf=document.getElementById('register-confirm').value; if(!n || !em || pw.length<6 || pw!==cf) return document.getElementById('auth-error').textContent='Valide nome, e-mail, senha (mínimo 6) e confirmação.'; try { await api.register({nome:n,email:em,password:pw}); e.target.reset(); document.getElementById('auth-error').textContent='Cadastro realizado. Faça login.'; } catch(err) { document.getElementById('auth-error').textContent=err.mensagem || 'Falha no cadastro'; } };
     },
+    pageCart() {
+        const items=Cart.items(), app=document.getElementById('app');
+        if (!this.state.user || this.state.user.perfil !== 'cliente') { app.innerHTML='<main class="cart-page"><h1>Carrinho</h1><p>É necessário entrar como cliente para finalizar a compra.</p></main>'; return; }
+        app.innerHTML=`<main class="cart-page"><button id="cart-back">Voltar</button><h1>Revisar carrinho</h1>${items.map(i=>`<article><h2>${this.escape(i.nome)}</h2><p>Estimativa: R$ ${(Cart.lineSubtotal(i)/100).toFixed(2)}</p><span>${i.quantity}</span></article>`).join('')||'<p>Carrinho vazio.</p>'}<p>Total estimado: R$ ${(Cart.total()/100).toFixed(2)}</p>${items.length?'<button id="checkout-action">Finalizar pedido</button>':''}<p id="checkout-feedback" role="status"></p></main>`;
+        document.getElementById('cart-back').onclick=()=>this.go('storefront'); const button=document.getElementById('checkout-action'); if(button) button.onclick=async()=>{button.disabled=true;button.textContent='Finalizando...';try{const order=await api.checkout(Cart.items());Cart.clear();this.updateCartCount();document.getElementById('checkout-feedback').textContent=`Pedido confirmado. Total do servidor: R$ ${Number(order.total).toFixed(2)}`;}catch(e){button.disabled=false;button.textContent='Finalizar pedido';document.getElementById('checkout-feedback').textContent=this.escape(e.mensagem||'Falha ao finalizar pedido');}};
+    },
+    async pageOrders() { const app=document.getElementById('app'); app.innerHTML='<main class="orders-page"><h1>Meus pedidos</h1><p role="status">Carregando pedidos...</p><div id="orders-list"></div></main>'; try { const orders=await api.getMyOrders(); const list=document.getElementById('orders-list'); list.innerHTML=orders.length?orders.map(o=>`<article><strong>Pedido ${this.escape(o.id)}</strong><p>Status: ${this.escape(o.status)} · Total: R$ ${Number(o.total).toFixed(2)} · ${this.escape(o.criado_em)}</p><button data-order="${this.escape(o.id)}">Detalhes</button></article>`).join(''):'<p>Nenhum pedido.</p>'; list.querySelectorAll('[data-order]').forEach(b=>b.onclick=async()=>{const o=await api.getMyOrder(b.dataset.order); document.getElementById('orders-list').insertAdjacentHTML('beforeend',`<pre>${this.escape(JSON.stringify(o.items,null,2))}</pre>`);}); } catch(e) { app.querySelector('[role=status]').textContent='Não foi possível carregar os pedidos.'; } },
 
     // ============ PARTS ============
     async pageParts() {
@@ -624,7 +414,7 @@ const App = {
         } catch(e) { alert(e.mensagem); }
     },
 
-    logout() { localStorage.removeItem('token'); this.state.user = null; this.go('login'); }
+    logout() { localStorage.removeItem('token'); this.state.user = null; this.go('storefront'); }
 };
 
 if (document.readyState === 'loading') {

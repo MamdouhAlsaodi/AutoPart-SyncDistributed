@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:fase1": "bash tests/run-fase1.sh",
+    "test:fase2": "bash tests/run-fase2.sh",
+    "test:fase4": "bash tests/run-fase4.sh",
+    "test:fase5": "bash tests/run-fase5.sh"
   },
   "keywords": [],
   "author": "",

@@ -9,7 +9,7 @@ const App = {
     },
 
     async pageStorefront() {
-        document.getElementById('app').innerHTML = `<header class="store-header"><strong>AutoPart</strong><nav><a href="#catalogo">Catálogo</a><button id="cart-entry">Carrinho (<span id="cart-count">0</span>)</button><span id="cart-status" role="status" aria-live="polite"></span><button id="account-entry">Minha conta</button><button id="admin-entry">Área administrativa</button></nav></header><main class="storefront"><section class="hero"><h1>Peças certas para seu veículo</h1><p>Consulte nosso catálogo de autopeças com dados reais e disponibilidade atual.</p></section><section class="featured-section" aria-labelledby="featured-title"><h2 id="featured-title">Destaques</h2><p id="featured-state" role="status">Carregando destaques...</p><div id="featured-grid" class="featured-grid"></div></section><section id="catalogo" class="catalogue-section"><form id="catalogue-filters"><label>Buscar <input name="busca" autocomplete="off"></label><label>Marca <input name="marca"></label><label>Modelo <input name="modelo"></label><label>Categoria <input name="categoria"></label><button>Filtrar</button></form><p id="catalogue-state" role="status">Carregando catálogo...</p><div id="catalogue-grid" class="product-grid"></div></section></main><footer>AutoPart — catálogo público</footer><div id="product-modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-card"><button id="close-modal" aria-label="Fechar">×</button><div id="product-detail"></div></div></div>`;
+        document.getElementById('app').innerHTML = `<header class="store-header"><strong>AutoPart</strong><nav><a href="#catalogo">Catálogo</a><button id="cart-entry">Carrinho (<span id="cart-count">0</span>)</button><span id="cart-status" role="status" aria-live="polite"></span><button id="account-entry">Minha conta</button><button id="admin-entry">Área administrativa</button></nav></header><main class="storefront"><section class="hero"><h1>Peças certas para cada veículo</h1><p>Consulte nosso catálogo de autopeças com dados reais e disponibilidade atual.</p></section><section class="featured-section" aria-labelledby="featured-title"><h2 id="featured-title">Seleção do catálogo</h2><p id="featured-state" role="status">Carregando destaques...</p><div id="featured-grid" class="featured-grid"></div></section><section id="catalogo" class="catalogue-section"><form id="catalogue-filters"><label>Buscar <input name="busca" autocomplete="off"></label><label>Marca <input name="marca"></label><label>Modelo <input name="modelo"></label><label>Categoria <input name="categoria"></label><button>Filtrar</button></form><p id="catalogue-state" role="status">Carregando catálogo...</p><div id="catalogue-grid" class="product-grid"></div></section></main><footer>AutoPart — catálogo público</footer><div id="product-modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-card"><button id="close-modal" aria-label="Fechar">×</button><div id="product-detail"></div></div></div>`;
         if (this.state.user?.perfil === 'cliente') { const account = document.getElementById('account-entry'); account.textContent = this.escape(this.state.user.nome || 'Minha conta'); account.onclick = () => this.go('account'); const logout = document.createElement('button'); logout.id = 'logout-entry'; logout.textContent = 'Sair'; logout.onclick = () => this.logout(); account.after(logout); const orders = document.createElement('button'); orders.id = 'orders-entry'; orders.textContent = 'Meus pedidos'; orders.onclick = () => this.go('orders'); account.after(orders); } else { document.getElementById('account-entry').textContent = 'Entrar / cadastrar'; document.getElementById('account-entry').onclick = () => this.go('account'); } document.getElementById('cart-entry').onclick = () => this.go('cart'); document.getElementById('admin-entry').onclick = () => this.go('login'); this.updateCartCount();
         document.getElementById('catalogue-filters').onsubmit = e => { e.preventDefault(); this.loadCatalogue(new FormData(e.target)); };
         document.getElementById('close-modal').onclick = () => document.getElementById('product-modal').classList.add('hidden');
@@ -17,73 +17,61 @@ const App = {
         await this.loadCatalogue();
     },
     escape(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
-    async loadCatalogue(form) { const state = document.getElementById('catalogue-state'), grid = document.getElementById('catalogue-grid'), featuredState = document.getElementById('featured-state'), featuredGrid = document.getElementById('featured-grid'); if (!state || !grid) return; state.textContent = 'Carregando catálogo...'; if (featuredState) featuredState.textContent = 'Carregando destaques...'; if (featuredGrid) featuredGrid.innerHTML = ''; try { const params = form ? Object.fromEntries([...form].filter(([,v]) => v.trim())) : {}; const result = await api.getCatalogue(params); const items = result.data || []; state.textContent = items.length ? `${result.count} produtos encontrados` : 'Nenhum produto encontrado.'; grid.innerHTML = items.map(p => `<article class="product-card"><h2>${this.escape(p.nome)}</h2><p>${this.escape(p.descricao)}</p><small>${this.escape(p.categoria || 'Sem categoria')} · ${this.escape(p.codigo)}</small><strong>R$ ${Number(p.preco_venda).toFixed(2)}</strong><button data-id="${this.escape(p.id || p._id)}">Ver detalhes</button><button class="add-cart" data-product='${this.escape(JSON.stringify({id:p.id || p._id,nome:p.nome,preco_venda:p.preco_venda}))}'>Adicionar ao carrinho</button></article>`).join(''); if (featuredState && featuredGrid) { featuredState.textContent = items.length ? 'Produtos selecionados do catálogo atual.' : 'Nenhum destaque disponível.'; featuredGrid.innerHTML = items.slice(0, 3).map(p => `<article class="featured-card"><h3>${this.escape(p.nome)}</h3><p>${this.escape(p.descricao)}</p><small>${this.escape(p.categoria || 'Sem categoria')}</small></article>`).join(''); } grid.querySelectorAll('[data-id]').forEach(b => b.onclick = () => this.showProduct(b.dataset.id)); grid.querySelectorAll('.add-cart').forEach(b => b.onclick = () => { Cart.addProduct(JSON.parse(b.dataset.product)); this.updateCartCount(); const status = document.getElementById('cart-status'); if (status) status.textContent = 'Produto adicionado ao carrinho.'; }); } catch (e) { state.textContent = e.mensagem || 'Não foi possível carregar o catálogo.'; grid.innerHTML = ''; if (featuredState) featuredState.textContent = 'Não foi possível carregar os destaques.'; if (featuredGrid) featuredGrid.innerHTML = ''; } },
-    async showProduct(id) { try { const result = await api.getCatalogueDetail(id), p = result.data || result; const compatibilidades = Array.isArray(p.compatibilidades) ? p.compatibilidades : []; const compatibilityHtml = compatibilidades.length ? compatibilidades.map(c => `<li>${this.escape(c.marca)} ${this.escape(c.modelo)} — ${this.escape(Array.isArray(c.anos) ? c.anos.join(', ') : c.anos)}</li>`).join('') : '<li>Nenhuma compatibilidade informada.</li>'; document.getElementById('product-detail').innerHTML = `<h2>${this.escape(p.nome)}</h2><p>${this.escape(p.descricao)}</p><p>Categoria: ${this.escape(p.categoria || 'Sem categoria')}</p><p>Estoque: ${this.escape(p.estoque_atual)}</p><p>R$ ${Number(p.preco_venda).toFixed(2)}</p><h3>Compatibilidade</h3><ul>${compatibilityHtml}</ul>`; document.getElementById('product-detail').insertAdjacentHTML('beforeend', `<button id="detail-add">Adicionar ao carrinho</button>`); document.getElementById('detail-add').onclick = () => { Cart.addProduct({id:p.id || p._id,nome:p.nome,preco_venda:p.preco_venda}); this.updateCartCount(); const status = document.getElementById('cart-status'); if (status) status.textContent = 'Produto adicionado ao carrinho.'; }; document.getElementById('product-modal').classList.remove('hidden'); } catch (e) { alert(e.mensagem || 'Produto indisponível'); } },
+    async loadCatalogue(form) { const state = document.getElementById('catalogue-state'), grid = document.getElementById('catalogue-grid'), featuredState = document.getElementById('featured-state'), featuredGrid = document.getElementById('featured-grid'); if (!state || !grid) return; state.textContent = 'Carregando catálogo...'; if (featuredState) featuredState.textContent = 'Carregando destaques...'; if (featuredGrid) featuredGrid.innerHTML = ''; try { const params = form ? Object.fromEntries([...form].filter(([,v]) => v.trim())) : {}; const result = await api.getCatalogue(params); const items = result.data || []; state.textContent = items.length ? `${result.count} produtos encontrados` : 'Nenhum produto encontrado.'; grid.innerHTML = items.map(p => `<article class="product-card"><h2>${this.escape(p.nome)}</h2><p>${this.escape(p.descricao)}</p><small class="part-label"><b>SKU ${this.escape(p.codigo)}</b><span>${this.escape(p.categoria || 'Sem categoria')}</span><span>ESTOQUE ${this.escape(p.estoque_atual ?? '—')}</span></small><strong>R$ ${Number(p.preco_venda).toFixed(2)}</strong><button data-id="${this.escape(p.id || p._id)}">Consultar detalhes</button><button class="add-cart" data-product='${this.escape(JSON.stringify({id:p.id || p._id,nome:p.nome,preco_venda:p.preco_venda}))}'>Adicionar</button></article>`).join(''); if (featuredState && featuredGrid) { featuredState.textContent = items.length ? 'Produtos selecionados do catálogo atual.' : 'Nenhum destaque disponível.'; featuredGrid.innerHTML = items.slice(0, 3).map(p => `<article class="featured-card"><h3>${this.escape(p.nome)}</h3><p>${this.escape(p.descricao)}</p><small class="part-label"><b>${this.escape(p.codigo || 'SKU —')}</b><span>${this.escape(p.categoria || 'Sem categoria')}</span><span>ESTOQUE ${this.escape(p.estoque_atual ?? '—')}</span></small></article>`).join(''); } grid.querySelectorAll('[data-id]').forEach(b => b.onclick = () => this.showProduct(b.dataset.id)); grid.querySelectorAll('.add-cart').forEach(b => b.onclick = () => { Cart.addProduct(JSON.parse(b.dataset.product)); this.updateCartCount(); const status = document.getElementById('cart-status'); if (status) status.textContent = 'Produto adicionado ao carrinho.'; }); } catch (e) { state.textContent = e.mensagem || 'Não foi possível carregar o catálogo.'; grid.innerHTML = ''; if (featuredState) featuredState.textContent = 'Não foi possível carregar os destaques.'; if (featuredGrid) featuredGrid.innerHTML = ''; } },
+    async showProduct(id) { try { const result = await api.getCatalogueDetail(id), p = result.data || result; const compatibilidades = Array.isArray(p.compatibilidades) ? p.compatibilidades : []; const compatibilityHtml = compatibilidades.length ? compatibilidades.map(c => `<li>${this.escape(c.marca)} ${this.escape(c.modelo)} — ${this.escape(Array.isArray(c.anos) ? c.anos.join(', ') : c.anos)}</li>`).join('') : '<li>Nenhuma compatibilidade informada.</li>'; document.getElementById('product-detail').innerHTML = `<h2>${this.escape(p.nome)}</h2><p>${this.escape(p.descricao)}</p><p>Categoria: ${this.escape(p.categoria || 'Sem categoria')}</p><p>Estoque: ${this.escape(p.estoque_atual)}</p><p>R$ ${Number(p.preco_venda).toFixed(2)}</p><h3>Compatibilidade</h3><ul>${compatibilityHtml}</ul>`; document.getElementById('product-detail').insertAdjacentHTML('beforeend', `<button id="detail-add">Adicionar</button>`); document.getElementById('detail-add').onclick = () => { Cart.addProduct({id:p.id || p._id,nome:p.nome,preco_venda:p.preco_venda}); this.updateCartCount(); const status = document.getElementById('cart-status'); if (status) status.textContent = 'Produto adicionado ao carrinho.'; }; document.getElementById('product-modal').classList.remove('hidden'); } catch (e) { this.showFeedback(e.mensagem || 'Produto indisponível'); } },
 
     go(page) {
         this.state.page = page;
-        const pages = { 
+        const pages = {
             storefront: () => this.pageStorefront(),
             'admin-management': () => this.pageAdminManagement(),
             login: () => this.pageLogin(), account: () => this.pageAccount(), cart: () => this.pageCart(), orders: () => this.pageOrders(),
-            dashboard: () => this.pageDashboard(), 
-            parts: () => this.pageParts(), 
-            movements: () => this.pageMovements(), 
+            dashboard: () => this.pageDashboard(),
+            parts: () => this.pageParts(),
+            movements: () => this.pageMovements(),
             reports: () => this.pageReports(),
             users: () => this.pageUsers()
         };
         (pages[page] || pages.login)();
     },
 
-    sidebar(active) {
-        const items = [
-            { id:'dashboard', icon:'fa-chart-line', label:'Dashboard' },
-            { id:'parts', icon:'fa-cogs', label:'Catálogo' },
-            { id:'movements', icon:'fa-exchange-alt', label:'Movimentações' },
-            { id:'reports', icon:'fa-chart-bar', label:'Relatórios' },
-        ];
-        if (this.state.user?.perfil === 'admin') {
-            items.push({ id:'users', icon:'fa-users', label:'Usuários' });
-        }
-        return `
-        <aside class="w-60 bg-slate-900 text-white flex flex-col h-screen sticky top-0 flex-shrink-0">
-            <div class="p-5 border-b border-slate-800">
-                <h2 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-box-open text-blue-400"></i> AutoPart</h2>
-                <p class="text-[10px] text-slate-500 mt-1">Sistema Distribuído</p>
-            </div>
-            <nav class="flex-1 p-3 space-y-1">
-                ${items.map(i => `
-                    <button onclick="App.go('${i.id}')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${active===i.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}">
-                        <i class="fas ${i.icon} w-5"></i> ${i.label}
-                    </button>
-                `).join('')}
-            </nav>
-            <div class="p-3 border-t border-slate-800 space-y-2">
-                <div class="px-4 py-2 mb-2"><span class="text-xs text-slate-500">${this.state.user?.nome || ''}</span><br><span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">${this.state.user?.perfil || ''}</span></div>
-                <button onclick="App.logout()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-all"><i class="fas fa-sign-out-alt w-5"></i> Sair</button>
-            </div>
-        </aside>`;
+    managementShell(active, title, content, actions = '') {
+        return `<div class="management-shell"><aside class="management-sidebar">${this.sidebar(active)}</aside><main class="management-workspace"><header class="management-header"><div><p class="eyebrow">AutoPart Gestão</p><h1 class="page-heading">${title}</h1></div><div class="header-actions">${actions}</div></header>${content}</main></div>`;
     },
+    sidebar(active) {
+        const items = [{id:'dashboard',label:'Visão geral'},{id:'parts',label:'Peças e catálogo'},{id:'movements',label:'Movimentações'},{id:'reports',label:'Relatórios'}];
+        if (this.state.user?.perfil === 'admin') items.push({id:'users',label:'Usuários e acessos'});
+        return `<div class="sidebar-inner"><div class="brand-lockup"><span class="brand-mark">AP</span><div><strong>AutoPart</strong><small>Gestão de autopeças</small></div></div><nav class="management-nav" aria-label="Navegação principal">${items.map(i=>`<button class="nav-item ${active===i.id?'is-active':''}" onclick="App.go('${i.id}')">${i.label}</button>`).join('')}</nav><div class="sidebar-footer"><span class="user-name">${this.escape(this.state.user?.nome||'Usuário')}</span><span class="status-chip status-chip--neutral">${this.escape(this.state.user?.perfil||'')}</span><button class="nav-item nav-item--exit" onclick="App.logout()">Sair</button></div></div>`;
+    },
+
+    showFeedback(message) { const app=document.getElementById('app'); if (!app) return; let panel=document.getElementById('app-feedback'); if (!panel) { panel=document.createElement('div'); panel.id='app-feedback'; panel.className='feedback-panel'; panel.setAttribute('role','alert'); app.prepend(panel); } panel.textContent=message; panel.focus(); },
 
     updateCartCount() { const el = document.getElementById('cart-count'); if (el) el.textContent = Cart.count(); },
     async pageAdminManagement() {
         if (this.state.user?.perfil !== 'admin') { this.go('storefront'); return; }
         const app = document.getElementById('app');
-        app.innerHTML = `<main class="admin-management"><h1>Gestão administrativa</h1><p id="admin-feedback" role="status"></p><section><h2>Produtos</h2><form id="admin-product-form"><input name="codigo" required placeholder="Código"><input name="nome" required placeholder="Nome"><input name="descricao" placeholder="Descrição"><input name="preco_venda" type="number" step="0.01" required placeholder="Preço"><input name="estoque_atual" type="number" required placeholder="Estoque"><input name="estoque_minimo" type="number" placeholder="Estoque mínimo"><button>Salvar produto</button></form><div id="admin-products"></div></section><section><h2>Pedidos</h2><div id="admin-orders"></div></section></main>`;
+        app.innerHTML = `<div class="management-shell">${this.sidebar('admin-management')}<main class="management-workspace admin-management"><header class="management-header"><div><p class="eyebrow">AutoPart Gestão</p><h1 class="page-heading">Central de operações</h1></div></header><p id="admin-feedback" class="feedback-panel" role="status"></p><section><h2>Produtos</h2><form id="admin-product-form"><input name="codigo" required placeholder="Código"><input name="nome" required placeholder="Nome"><input name="descricao" placeholder="Descrição"><input name="preco_venda" type="number" step="0.01" required placeholder="Preço"><input name="estoque_atual" type="number" required placeholder="Estoque"><input name="estoque_minimo" type="number" placeholder="Estoque mínimo"><button>Salvar produto</button></form><div id="admin-products"></div></section><section><h2>Pedidos</h2><div id="admin-orders"></div></section></main></div>`;
         const feedback = document.getElementById('admin-feedback');
         const showError = error => { feedback.textContent = error.mensagem || 'Falha na operação'; };
         const fields = ['codigo', 'nome', 'descricao', 'preco_venda', 'estoque_atual', 'estoque_minimo'];
         const render = async () => { try { const [products, orders] = await Promise.all([api.admin.listProducts(), api.admin.listOrders()]);
             document.getElementById('admin-products').innerHTML = (products.data || []).map(p => `<article><span>${this.escape(p.nome)} — R$ ${Number(p.preco_venda).toFixed(2)} · estoque ${p.estoque_atual}</span> <button data-detail-product="${p._id}">Detalhes</button> <button data-edit-product="${p._id}">Editar</button> <button data-delete-product="${p._id}">Desativar</button></article>`).join('');
             document.getElementById('admin-orders').innerHTML = orders.map(o => `<article>Pedido ${this.escape(o.id)} — ${this.escape(o.status)} <button data-detail-order="${o.id}">Detalhes</button> <select data-status="${o.id}"><option value="">Alterar status</option><option>confirmado</option><option>em_processamento</option><option>enviado</option><option>concluido</option><option>cancelado</option></select></article>`).join('');
-            document.querySelectorAll('[data-detail-product]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getProduct(b.dataset.detailProduct); feedback.textContent = JSON.stringify(r.data || r); } catch (e) { showError(e); } });
-            document.querySelectorAll('[data-edit-product]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getProduct(b.dataset.editProduct), product = r.data || r; const payload = Object.fromEntries(fields.filter(f => product[f] !== undefined).map(f => [f, product[f]])); payload.nome = window.prompt('Nome', payload.nome) || payload.nome; await api.admin.updateProduct(b.dataset.editProduct, payload); await render(); } catch (e) { showError(e); } });
+            document.querySelectorAll('[data-detail-product]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getProduct(b.dataset.detailProduct); feedback.innerHTML = `<strong>Detalhes da peça</strong><pre>${this.escape(JSON.stringify(r.data || r, null, 2))}</pre>`; } catch (e) { showError(e); } });
+            document.querySelectorAll('[data-edit-product]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getProduct(b.dataset.editProduct), product = r.data || r; const payload = Object.fromEntries(fields.filter(f => product[f] !== undefined).map(f => [f, product[f]])); this.showEditProductModal(b.dataset.editProduct, payload, render); } catch (e) { showError(e); } });
             document.querySelectorAll('[data-delete-product]').forEach(b => b.onclick = async () => { try { await api.admin.deleteProduct(b.dataset.deleteProduct); await render(); } catch (e) { showError(e); } });
-            document.querySelectorAll('[data-detail-order]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getOrder(b.dataset.detailOrder); feedback.textContent = JSON.stringify(r); } catch (e) { showError(e); } });
+            document.querySelectorAll('[data-detail-order]').forEach(b => b.onclick = async () => { try { const r = await api.admin.getOrder(b.dataset.detailOrder); feedback.innerHTML = `<strong>Detalhes do pedido</strong><pre>${this.escape(JSON.stringify(r, null, 2))}</pre>`; } catch (e) { showError(e); } });
             document.querySelectorAll('[data-status]').forEach(select => select.onchange = async () => { if (select.value) try { await api.admin.updateOrderStatus(select.dataset.status, select.value); await render(); } catch (e) { showError(e); } });
         } catch (e) { showError(e); } };
         document.getElementById('admin-product-form').onsubmit = async e => { e.preventDefault(); try { const payload = Object.fromEntries(new FormData(e.target)); payload.preco_venda = Number(payload.preco_venda); payload.estoque_atual = Number(payload.estoque_atual); if (payload.estoque_minimo) payload.estoque_minimo = Number(payload.estoque_minimo); await api.admin.createProduct(payload); e.target.reset(); await render(); } catch (error) { showError(error); } };
         await render();
+    },
+    showEditProductModal(id, payload, onSaved) {
+        const modal=document.createElement('div'); modal.className='modal'; modal.innerHTML=`<div class="modal-card"><button type="button" class="modal-close" aria-label="Fechar">×</button><h2>Editar peça</h2><form class="inline-edit-form"><label>Nome<input name="nome" required value="${this.escape(payload.nome||'')}"></label><div><button type="button" class="modal-cancel">Cancelar</button><button>Salvar alterações</button></div></form></div>`;
+        document.body.appendChild(modal); const close=()=>modal.remove(); modal.querySelector('.modal-close').onclick=close; modal.querySelector('.modal-cancel').onclick=close; modal.querySelector('form').onsubmit=async e=>{e.preventDefault(); try{payload.nome=new FormData(e.target).get('nome'); await api.admin.updateProduct(id,payload); close(); await onSaved();}catch(err){this.showFeedback(err.mensagem||'Não foi possível atualizar a peça.');}};
+    },
+    async pageDashboard() {
+        const app=document.getElementById('app'); app.innerHTML=`<div class="management-shell">${this.sidebar('dashboard')}<main class="management-workspace"><header class="management-header"><div><p class="eyebrow">AutoPart Gestão</p><h1 class="page-heading">Visão geral</h1></div></header><section class="dashboard-grid"><article class="management-card"><h2>Operação diária</h2><p>Consulte estoque, movimentações e relatórios pelo menu lateral.</p></article><article class="management-card"><h2>Acesso atual</h2><p>${this.escape(this.state.user?.nome||'Usuário')} · ${this.escape(this.state.user?.perfil||'')}</p></article></section></main></div>`;
     },
     pageAccount() { this.pageLogin(true); },
     pageLogin(account = false) {
@@ -95,23 +83,23 @@ const App = {
     pageCart() {
         const items=Cart.items(), app=document.getElementById('app');
         if (!this.state.user || this.state.user.perfil !== 'cliente') { app.innerHTML='<main class="cart-page"><h1>Carrinho</h1><p>É necessário entrar como cliente para finalizar a compra.</p></main>'; return; }
-        app.innerHTML=`<main class="cart-page"><button id="cart-back">Voltar</button><h1>Revisar carrinho</h1>${items.map(i=>`<article><h2>${this.escape(i.nome)}</h2><p>Estimativa: R$ ${(Cart.lineSubtotal(i)/100).toFixed(2)}</p><span>${i.quantity}</span></article>`).join('')||'<p>Carrinho vazio.</p>'}<p>Total estimado: R$ ${(Cart.total()/100).toFixed(2)}</p>${items.length?'<button id="checkout-action">Finalizar pedido</button>':''}<p id="checkout-feedback" role="status"></p></main>`;
+        app.innerHTML=`<main class="cart-page"><button id="cart-back">Voltar</button><h1>Revisar pedido</h1>${items.map(i=>`<article><h2>${this.escape(i.nome)}</h2><p>Estimativa: R$ ${(Cart.lineSubtotal(i)/100).toFixed(2)}</p><span>${i.quantity}</span></article>`).join('')||'<p>Carrinho vazio.</p>'}<p>Total estimado: R$ ${(Cart.total()/100).toFixed(2)}</p>${items.length?'<button id="checkout-action">Finalizar pedido</button>':''}<p id="checkout-feedback" role="status"></p></main>`;
         document.getElementById('cart-back').onclick=()=>this.go('storefront'); const button=document.getElementById('checkout-action'); if(button) button.onclick=async()=>{button.disabled=true;button.textContent='Finalizando...';try{const order=await api.checkout(Cart.items());Cart.clear();this.updateCartCount();document.getElementById('checkout-feedback').textContent=`Pedido confirmado. Total do servidor: R$ ${Number(order.total).toFixed(2)}`;}catch(e){button.disabled=false;button.textContent='Finalizar pedido';document.getElementById('checkout-feedback').textContent=this.escape(e.mensagem||'Falha ao finalizar pedido');}};
     },
     async pageOrders() { const app=document.getElementById('app'); app.innerHTML='<main class="orders-page"><h1>Meus pedidos</h1><p role="status">Carregando pedidos...</p><div id="orders-list"></div></main>'; try { const orders=await api.getMyOrders(); const list=document.getElementById('orders-list'); list.innerHTML=orders.length?orders.map(o=>`<article><strong>Pedido ${this.escape(o.id)}</strong><p>Status: ${this.escape(o.status)} · Total: R$ ${Number(o.total).toFixed(2)} · ${this.escape(o.criado_em)}</p><button data-order="${this.escape(o.id)}">Detalhes</button></article>`).join(''):'<p>Nenhum pedido.</p>'; list.querySelectorAll('[data-order]').forEach(b=>b.onclick=async()=>{const o=await api.getMyOrder(b.dataset.order); document.getElementById('orders-list').insertAdjacentHTML('beforeend',`<pre>${this.escape(JSON.stringify(o.items,null,2))}</pre>`);}); } catch(e) { app.querySelector('[role=status]').textContent='Não foi possível carregar os pedidos.'; } },
 
     // ============ PARTS ============
     async pageParts() {
-        document.getElementById('app').innerHTML = `<div class="flex min-h-screen">${this.sidebar('parts')}<main class="flex-1 p-8 overflow-auto">
+        document.getElementById('app').innerHTML = `<div class="management-shell">${this.sidebar('parts')}<main class="management-workspace">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold">Catálogo de Peças</h1>
-                <button onclick="App.showAddPartModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all"><i class="fas fa-plus"></i> Nova Peça</button>
+                <h1 class="page-heading text-3xl font-bold">Catálogo de autopeças</h1>
+                <button onclick="App.showAddPartModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all"><i class="fas fa-plus"></i> Nova peça</button>
             </div>
             <div class="flex gap-3 mb-6">
                 <input type="text" id="search-input" placeholder="Buscar por nome ou código..." class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                 <button onclick="App.searchParts()" class="bg-slate-200 hover:bg-slate-300 px-4 py-2.5 rounded-lg font-medium transition-all"><i class="fas fa-search"></i></button>
             </div>
-            <div id="parts-table" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><p class="p-6 text-slate-400">Carregando...</p></div>
+            <div id="parts-table" class="table-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><p class="p-6 text-slate-400">Carregando...</p></div>
         </main></div>`;
         try {
             const res = await api.getParts();
@@ -144,7 +132,7 @@ const App = {
                     <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${p.estoque_atual <= p.estoque_minimo ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${p.estoque_atual <= p.estoque_minimo ? 'Baixo' : 'OK'}</span></td>
                 </tr>`).join('');
             document.getElementById('parts-table').innerHTML = `<table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-3 text-left font-medium text-slate-600">Código</th><th class="px-4 py-3 text-left font-medium text-slate-600">Nome</th><th class="px-4 py-3 text-left font-medium text-slate-600">Categoria</th><th class="px-4 py-3 text-right font-medium text-slate-600">Estoque</th><th class="px-4 py-3 text-right font-medium text-slate-600">Preço</th><th class="px-4 py-3 text-left font-medium text-slate-600">Status</th></tr></thead><tbody>${tableRows}</tbody></table>`;
-        } catch(e) { console.error(e); alert('Erro ao buscar'); }
+        } catch(e) { console.error(e); this.showFeedback('Erro ao buscar'); }
     },
 
     showAddPartModal() {
@@ -154,7 +142,7 @@ const App = {
         modal.innerHTML = `
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
                 <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                    <h2 class="text-xl font-bold text-slate-900">Nova Peça</h2>
+                    <h2 class="text-xl font-bold text-slate-900">Nova peça</h2>
                     <button onclick="App.closeAddPartModal()" class="text-slate-400 hover:text-slate-600 transition-colors"><i class="fas fa-times text-xl"></i></button>
                 </div>
                 <form id="add-part-form" class="p-6 space-y-4">
@@ -190,7 +178,7 @@ const App = {
                     </div>
                     <div class="pt-4 flex gap-3">
                         <button type="button" onclick="App.closeAddPartModal()" class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 font-medium text-slate-700 hover:bg-slate-50 transition-all">Cancelar</button>
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all">Salvar Peça</button>
+                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all">Salvar peça</button>
                     </div>
                 </form>
             </div>`;
@@ -206,7 +194,7 @@ const App = {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
-        
+
         // Convert numbers
         data.preco_custo = parseFloat(data.preco_custo);
         data.preco_venda = parseFloat(data.preco_venda);
@@ -218,18 +206,18 @@ const App = {
             this.closeAddPartModal();
             this.pageParts(); // Refresh list
         } catch (err) {
-            alert(err.mensagem || 'Erro ao salvar peça');
+            this.showFeedback(err.mensagem || 'Erro ao salvar peça');
         }
     },
 
     // ============ MOVEMENTS ============
     async pageMovements() {
-        document.getElementById('app').innerHTML = `<div class="flex min-h-screen">${this.sidebar('movements')}<main class="flex-1 p-8 overflow-auto"><h1 class="text-3xl font-bold mb-6">Movimentações</h1><div id="mov-content" class="space-y-6"><p class="text-slate-400">Carregando...</p></div></main></div>`;
+        document.getElementById('app').innerHTML = `<div class="management-shell">${this.sidebar('movements')}<main class="management-workspace"><h1 class="page-heading text-3xl font-bold mb-6">Movimentações</h1><div id="mov-content" class="management-content"><p class="text-slate-400">Carregando...</p></div></main></div>`;
         try {
             const [parts, history] = await Promise.all([api.getParts(), api.getHistory()]);
             const partsList = (parts.data || parts);
             const histList = (history.data || history) || [];
-            
+
             const historyRows = histList.map(m => `
                 <tr class="border-t border-slate-100 hover:bg-slate-50">
                     <td class="px-4 py-3">${new Date(m.criado_em).toLocaleString('pt-BR')}</td>
@@ -251,7 +239,7 @@ const App = {
 
     // ============ REPORTS ============
     async pageReports() {
-        document.getElementById('app').innerHTML = `<div class="flex min-h-screen">${this.sidebar('reports')}<main class="flex-1 p-8 overflow-auto"><h1 class="text-3xl font-bold mb-6">Relatórios</h1><div id="reports-content" class="space-y-6"><p class="text-slate-400">Carregando...</p></div></main></div>`;
+        document.getElementById('app').innerHTML = `<div class="management-shell">${this.sidebar('reports')}<main class="management-workspace"><h1 class="page-heading text-3xl font-bold mb-6">Relatórios</h1><div id="reports-content" class="management-content"><p class="text-slate-400">Carregando...</p></div></main></div>`;
         try {
             const [parts, history] = await Promise.all([api.getParts(), api.getHistory()]);
             const partsData = parts.data || parts;
@@ -263,11 +251,11 @@ const App = {
             document.getElementById('reports-content').innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="font-bold mb-4">Total de Movimentações</h3>
+                    <h3 class="font-bold mb-4">Total de movimentações</h3>
                     <canvas id="chart-mov-bar" height="250"></canvas>
                 </div>
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="font-bold mb-4">Movimentações por Tipo</h3>
+                    <h3 class="font-bold mb-4">Movimentações por tipo</h3>
                     <canvas id="chart-mov-doughnut" height="250"></canvas>
                 </div>
             </div>`;
@@ -288,20 +276,20 @@ const App = {
             }
         } catch(e) { console.error(e); document.getElementById('reports-content').innerHTML = '<p class="text-red-500">Erro ao carregar relatórios</p>'; }
     },
-    
+
     // ============ USERS ============
     async pageUsers() {
         document.getElementById('app').innerHTML = `
-        <div class="flex min-h-screen">
+        <div class="management-shell">
             ${this.sidebar('users')}
-            <main class="flex-1 p-8 overflow-auto">
+            <main class="management-workspace">
                 <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-bold">Gestão de Usuários</h1>
+                    <h1 class="page-heading text-3xl font-bold">Equipe e acessos</h1>
                     <button onclick="App.showAddUserModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all">
                         <i class="fas fa-user-plus"></i> Novo Usuário
                     </button>
                 </div>
-                <div id="users-content" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div id="users-content" class="table-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <p class="p-8 text-center text-slate-400">Carregando usuários...</p>
                 </div>
             </main>
@@ -341,7 +329,7 @@ const App = {
                 </form>
             </div>
         </div>`;
-        
+
         document.getElementById('user-form').onsubmit = async (e) => {
             e.preventDefault();
             const data = {
@@ -354,9 +342,9 @@ const App = {
                 await api.createUser(data);
                 this.closeUserModal();
                 this.pageUsers();
-            } catch(err) { 
+            } catch(err) {
                 console.error('Create User Error:', err);
-                alert(err.mensagem || `Erro ${err.codigo || ''}: Falha ao criar usuário. Verifique se o e-mail já existe.`); 
+                this.showFeedback(err.mensagem || `Erro ${err.codigo || ''}: Falha ao criar usuário. Verifique se o e-mail já existe.`);
             }
         };
 
@@ -399,19 +387,19 @@ const App = {
                     </thead>
                     <tbody>${rows || '<tr><td colspan="4" class="p-8 text-center text-slate-400">Nenhum usuário cadastrado</td></tr>'}</tbody>
                 </table>`;
-        } catch(e) { 
-            document.getElementById('users-content').innerHTML = `<p class="p-8 text-red-500 text-center">${e.mensagem || 'Erro ao carregar usuários'}</p>`; 
+        } catch(e) {
+            document.getElementById('users-content').innerHTML = `<p class="p-8 text-red-500 text-center">${e.mensagem || 'Erro ao carregar usuários'}</p>`;
         }
     },
 
     showAddUserModal() { document.getElementById('modal-user').classList.remove('hidden'); },
     closeUserModal() { document.getElementById('modal-user').classList.add('hidden'); },
     async toggleUser(id) {
-        if (!confirm('Alterar status deste usuário?')) return;
+        if (!window.confirm('Alterar status deste usuário?')) return;
         try {
             await api.toggleUserStatus(id);
             this.pageUsers();
-        } catch(e) { alert(e.mensagem); }
+        } catch(e) { this.showFeedback(e.mensagem || 'Não foi possível concluir a operação.'); }
     },
 
     logout() { localStorage.removeItem('token'); this.state.user = null; this.go('storefront'); }

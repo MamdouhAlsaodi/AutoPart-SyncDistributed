@@ -56,7 +56,7 @@ A sustentabilidade técnica favorece implantação local controlada, uso do banc
 
 ## 7. Limitações e conclusão
 
-A entrega cobre documentação, evidências rastreáveis, remoção de dados privados do conjunto indicado, configuração obrigatória de JWT, seed opt-in não destrutivo e remoção do auto-seed do navegador. Não inicia runtime público, não cria URL pública, não captura screenshots e não representa aceitação final. A reutilização deve ocorrer após revisão independente e execução autorizada dos testes aplicáveis.
+A entrega cobre documentação, evidências rastreáveis, remoção de dados privados do conjunto indicado, configuração obrigatória de JWT, seed opt-in não destrutivo e remoção do auto-seed do navegador. Não inicia runtime público nem cria URL pública. Em 2026-09-16 foram capturadas evidências visuais locais da vitrine desktop/mobile, da área administrativa e do deck HTML; elas não substituem uma captura individual das seis provas obrigatórias nem representam aceitação final. A reutilização deve ocorrer após revisão independente e execução autorizada dos testes aplicáveis.
 
 ## 8. Referências
 
@@ -69,9 +69,9 @@ A entrega cobre documentação, evidências rastreáveis, remoção de dados pri
 
 ## 6A. Demonstração acadêmica local opt-in
 
-O seed de demonstração é não destrutivo, idempotente e permanece desativado por padrão; sua execução depende de `SEED_DEMO_DATA=true` no runtime local e de `SEED_DEMO_PASSWORD` com pelo menos 12 caracteres. Para a demonstração acadêmica, os dois acessos públicos e genéricos são `admin.demo@autopart.test` (perfil `admin`) e `cliente.demo@autopart.test` (perfil `cliente`), ambos com `AutoPartDemo2026!`. Essas credenciais concedem acesso **somente à demonstração acadêmica semeada localmente**.
+O seed de demonstração é não destrutivo, idempotente e permanece desativado por padrão; sua execução depende de `SEED_DEMO_DATA=true` no runtime local e de `SEED_DEMO_PASSWORD` com pelo menos 12 caracteres. Para a demonstração acadêmica, os dois acessos públicos e genéricos são `admin.demo@autopart.test` (perfil `admin`) e `cliente.demo@autopart.test` (perfil `cliente`), ambos com `<SENHA_DEMO_LOCAL>`. Essas credenciais concedem acesso **somente à demonstração acadêmica semeada localmente**.
 
-`AutoPartDemo2026!` é uma senha pública/ acadêmica para esse uso local, não é segredo JWT e não deve ser usada em produção. `JWT_SECRET` continua obrigatório, privado, gerado independentemente e distinto da senha da demonstração. Este registro não afirma execução do seed, runtime público, serviço público, produção, pagamento ou logística.
+`<SENHA_DEMO_LOCAL>` é uma senha pública/ acadêmica para esse uso local, não é segredo JWT e não deve ser usada em produção. `JWT_SECRET` continua obrigatório, privado, gerado independentemente e distinto da senha da demonstração. Este registro não afirma execução do seed, runtime público, serviço público, produção, pagamento ou logística.
 
 ## Instruções de demonstração local
 
@@ -81,8 +81,8 @@ A demonstração acadêmica é somente local/demo. Com o projeto na raiz, execut
 docker compose up -d mongodb
 cp .env.example .env
 # Edite .env e use um JWT_SECRET privado com pelo menos 32 caracteres.
-# Defina também SEED_DEMO_DATA=true e SEED_DEMO_PASSWORD=AutoPartDemo2026!
+# Defina também SEED_DEMO_DATA=true e SEED_DEMO_PASSWORD=<SENHA_DEMO_LOCAL>
 node server/index.js
 ```
 
-Abra `http://localhost:3000`. As contas genéricas são `admin.demo@autopart.test` (admin) e `cliente.demo@autopart.test` (cliente), ambas com `AutoPartDemo2026!`. Essas credenciais são exclusivamente locais/demo acadêmicas; não há URL pública.
+Abra `http://localhost:5500`. As contas genéricas são `admin.demo@autopart.test` (admin) e `cliente.demo@autopart.test` (cliente), ambas com `<SENHA_DEMO_LOCAL>`. Essas credenciais são exclusivamente locais/demo acadêmicas; não há URL pública.

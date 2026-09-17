@@ -1,46 +1,48 @@
 # AutoPart-SyncDistributed — نص العرض التقديمي (عربي + Português)
 
-> نص مقسم صفحة-بصفحة لمطابقة عرض `/help` بالضبط (10 صفحات). كل صفحة: النص العربي ثم نظيره البرتغالي كما يظهر في العرض. للشرح أمام الزملاء.
+> نص مقسم صفحة-بصفحة للعرض الأكاديمي المحلي. كل صفحة: النص العربي ثم نظيره البرتغالي.
+> يعكس هذا النص الحالة المُتحقق منها في 2026-09-16: 22 اختبارًا آليًا ناجحًا و0 فشل عبر المراحل 1–6، وتشغيل محلي على <http://localhost:5500>.
+> بصدق: لا توجد اختبارات Playwright E2E. توجد الآن لقطات شاشة محلية حقيقية للمتجر والإدارة والعرض HTML، لكنها ليست تغطية بصرية منفصلة لكل واحدة من البراهين الستة. التشغيل محلي لأغراض العرض الأكاديمي ولا يُزعم أنه متاح دائمًا.
 
 ---
 
 ## الصفحة 1 — الشريحة الافتتاحية
 
 **عربي:**
-دراسة حالة أكاديمية: AutoPart-SyncDistributed. من ورشة لإدارة المخزون إلى نموذج أولي متكامل لمتجر إلكتروني لقطع غيار السيارات. تطبيق ويب حقيقي بفصل كامل بين الواجهة والخادم وقاعدة البيانات، ويعمل محليًا عبر شبكة Tailscale — بدون سحابة وبدون تكاليف خارجية.
+دراسة حالة أكاديمية: AutoPart-SyncDistributed. من ورشة لإدارة المخزون إلى نموذج أولي محلي لمتجر إلكتروني لقطع غيار السيارات. تطبيق ويب بفصل كامل بين الواجهة والخادم وقاعدة البيانات، يعمل محليًا لأغراض العرض الأكاديمي على <http://localhost:5500> — بدون سحابة وبدون تكاليف خارجية.
 
 **Português:**
-Estudo de caso acadêmico: AutoPart-SyncDistributed. Da oficina de inventário a um protótipo completo de e-commerce de peças automotivas. Aplicação web real com separação completa entre cliente, servidor e banco de dados, executada localmente via Tailscale — sem nuvem e sem custos externos.
+Estudo de caso acadêmico: AutoPart-SyncDistributed. Da gestão de estoque da oficina a um protótipo local de e-commerce de peças automotivas. Aplicação web com separação completa entre cliente, servidor e banco de dados, executada localmente para fins acadêmicos em <http://localhost:5500> — sem nuvem e sem custos externos.
 
 ---
 
-## الصفحة 2 — نظرة عامة
+## الصفحة 2 — المشكلة والقيمة
 
 **عربي:**
-المشكلة: إدارة المخزون اليدوية بطيئة وعرضة للأخطاء. الحل: AutoPart يرقمن الكتالوج وسلة المشتريات والطلبات. للنظام ملفا استخدام: العميل النهائي والمشرف، بمعمارية موزعة بسيطة: المتصفح ← واجهة API ← MongoDB.
+المشكلة: إدارة المخزون اليدوية بطيئة وعرضة للأخطاء وبدون سجل موثوق للطلبات. القيمة المقترحة: رقمنة الكتالوج والسلة والطلبات مع مخزون مركزي لدى الخادم كمصدر وحيد للحقيقة. ملفا الاستخدام: العميل النهائي والمشرف.
 
 **Português:**
-O problema: o controle manual de estoque é lento e propenso a erros. A solução: o AutoPart digitaliza o catálogo, o carrinho e os pedidos. Dois perfis de uso: cliente final e administrador, com arquitetura distribuída simples: navegador → API → MongoDB.
+O problema: o controle manual de estoque é lento, propenso a erros e sem histórico confiável de pedidos. O valor proposto: digitalizar catálogo, carrinho e pedidos com estoque centralizado no servidor como fonte única de verdade. Dois perfis de uso: cliente final e administrador.
 
 ---
 
 ## الصفحة 3 — المعمارية
 
 **عربي:**
-ثلاث طبقات، تطبيق واحد. الواجهة: JavaScript خالص مع Tailwind تُقدَّم كموقع ثابت. الخادم: Node.js 24 مع Express 5 وواجهة REST بJSON. قاعدة البيانات: MongoDB عبر Mongoose بحفظ دائم حقيقي. كل التواصل بين الواجهة والخادم يتم عبر API فقط.
+ثلاث طبقات، تطبيق واحد. الواجهة: Vanilla JavaScript (HTML/CSS/JS) تُقدَّم كموقع ثابت من الخادم نفسه. الخادم: Node.js مع Express وواجهة REST بـ JSON. قاعدة البيانات: MongoDB عبر Mongoose مع حفظ محلي. كل التواصل بين الواجهة والخادم يتم عبر API فقط.
 
 **Português:**
-Três camadas, uma aplicação. Cliente: Vanilla JavaScript + Tailwind, servido como site estático. Servidor: Node.js 24 + Express 5, API REST em JSON. Banco: MongoDB com Mongoose e persistência real. Toda a comunicação cliente-servidor acontece exclusivamente via API.
+Três camadas, uma aplicação. Cliente: Vanilla JavaScript (HTML/CSS/JS), servido como site estático pelo próprio servidor. Servidor: Node.js com Express, API REST em JSON. Banco: MongoDB com Mongoose e persistência local. Toda a comunicação cliente-servidor acontece exclusivamente via API.
 
 ---
 
 ## الصفحة 4 — الأمان
 
 **عربي:**
-تسجيل ودخول العملاء مع تحقق من طرف الخادم. كلمات السر مشفرة بـbcrypt ولا تُخزن نصًا صريحًا أبدًا. جلسات JWT تنتهي بعد 8 ساعات. منطقة الإدارة محمية بصلاحية الملف الشخصي (admin).
+تسجيل ودخول مع تحقق من طرف الخادم. كلمات السر محفوظة بتجزئة bcrypt ولا تُخزن نصًا صريحًا أبدًا. جلسات JWT موقّعة، وJWT_SECRET يأتي من الإعداد الخاص ولا يُنشر أبدًا. منطقة الإدارة محمية بصلاحية الملف الشخصي (admin) على مستوى الـAPI، وقد تحقق محليًا أن العميل يتلقى 403 عند محاولة الوصول إلى واجهة الإدارة.
 
 **Português:**
-Registro e login de clientes com validação no servidor. Senhas protegidas com hash bcrypt — nunca em texto puro. Sessões JWT com expiração de 8 horas. Área administrativa protegida por permissão de perfil (admin).
+Registro e login com validação no servidor. Senhas protegidas com hash bcrypt — nunca armazenadas em texto puro. Sessões JWT assinadas; o `JWT_SECRET` vem da configuração privada e nunca é publicado. Área administrativa protegida por perfil (admin) no nível da API; verificado localmente que o cliente recebe 403 ao tentar acessar endpoint administrativo.
 
 ---
 
@@ -57,56 +59,59 @@ Vitrine pública com destaques e categorias. A ficha da peça mostra compatibili
 ## الصفحة 6 — البيع
 
 **عربي:**
-سلة مشتريات محفوظة في المتصفح. الكميات والمجاميع الفرعية والإجمالي تُحسب لحظيًا. إتمام الطلب (محاكاة) ينشئ طلبًا محفوظًا فعلًا في قاعدة البيانات، مع سجل طلبات لكل عميل وحالة كل طلب.
+سلة مشتريات محفوظة في المتصفح. الكميات والمجاميع تُحسب لحظيًا. إتمام الطلب (محاكاة) ينشئ طلبًا محفوظًا فعليًا في قاعدة البيانات، مع سجل طلبات لكل عميل وحالة كل طلب — لا يوجد دفع حقيقي.
 
 **Português:**
-Carrinho persistente no navegador. Quantidades, subtotais e total calculados em tempo real. O checkout simulado cria pedidos persistentes de verdade no banco, com histórico de pedidos por cliente e status de cada pedido.
+Carrinho persistente no navegador. Quantidades e totais calculados em tempo real. O checkout simulado cria pedidos persistentes de verdade no banco, com histórico de pedidos por cliente e status de cada pedido — sem pagamento real.
 
 ---
 
 ## الصفحة 7 — الإدارة
 
 **عربي:**
-إدارة كاملة للقطع: إضافة وتعديل السعر والمخزون. حركات إدخال وإخراج المخزون مع سجل حركات كامل. إدارة الطلبات وتغيير حالتها، وتنبيه عند انخفاض المخزون.
+إدارة القطع من واجهة إدارية محمية: إنشاء وتعديل السعر والمخزون، وإدارة الطلبات وحالاتها. كل ذلك خلف صلاحية admin على مستوى الـAPI، لا في الواجهة فقط.
 
 **Português:**
-Gestão completa de peças: criar, editar, preço e estoque. Entrada e saída de estoque com histórico de movimentações. Gestão de pedidos com alteração de status e alerta de estoque baixo.
+Gestão de peças pela interface administrativa protegida: criação e edição de preço e estoque, e gestão de pedidos e seus status. Tudo protegido pela autorização admin no nível da API — não apenas na interface.
 
 ---
 
-## الصفحة 8 — الجودة
+## الصفحة 8 — الجودة (نتائج مُتحقق منها)
 
 **عربي:**
-اختبارات آلية للمراحل الرئيسية (API وتكامل)، واختبار E2E بمسار الشراء عبر Playwright. توثيق بلقطات شاشة لكل مرحلة داخل مجلد docs، وعقود API موثقة في المستودع.
+تحقق في 2026-09-16: 22 اختبارًا آليًا ناجحًا و0 فشل عبر المراحل 1–6. فحوص تشغيل محلية: الرئيسية والكتالوج 200، دخول المدير والعميل بنجاح، طلبات العميل 200، منتجات وطلبات الإدارة 200، والعميل يتلقى 403 على واجهة الإدارة. توجد لقطات شاشة محلية حقيقية للمتجر والإدارة والعرض HTML، ولا توجد اختبارات Playwright E2E.
 
 **Português:**
-Testes automatizados das fases principais (API + integração) e E2E com Playwright no fluxo de compra. Documentação com screenshots por fase em /docs e contratos de API versionados no repositório.
+Verificação de 2026-09-16: 22 testes automatizados aprovados e 0 falhas nas Fases 1–6. Checagens locais de execução: home e catálogo 200, login de admin e cliente, pedidos do cliente 200, produtos e pedidos do admin 200, e o cliente recebe 403 no endpoint administrativo. Há screenshots locais reais da vitrine, da administração e do deck HTML; não há suíte Playwright E2E.
 
 ---
 
-## الصفحة 9 — خارطة التطور
+## الصفحة 9 — الحدود والخطوات التالية
 
 **عربي:**
-المراحل من 0 إلى 6 مكتملة: من الكتالوج إلى التجارة الإلكترونية. القادم: مدفوعات محاكاة وتقارير مبيعات، ثم Docker Compose لتنسيق التشغيل الكامل، ونشر المشروع في GitHub كمعرض أعمال.
+الحدود بصدق: الدفع محاكاة فقط، التشغيل محلي أكاديمي، ولا يوجد نشر عام أو اتفاقية مستوى خدمة. الخطوات التالية المحتملة (غير منفذة كادعاء): النشر على GitHub كمعرض أعمال، تقارير المبيعات، وتحسينات التشغيل المحلي.
 
 **Português:**
-Fases 0-6 concluídas: do catálogo ao e-commerce. Próximo: pagamentos simulados e relatórios de venda, Docker Compose para orquestração completa e publicação do portfolio no GitHub.
+Limites honestos: checkout simulado, execução local acadêmica, sem publicação pública e sem SLA. Próximos passos possíveis (não afirmados como prontos): publicação no GitHub como portfólio, relatórios de vendas e melhorias de operação local.
 
 ---
 
-## الصفحة 10 — المستودع
+## الصفحة 10 — المستودع والعرض المحلي
 
 **عربي:**
-المستودع على GitHub مع README يتضمن خطوات تشغيل محلية مُتحقق منها، وحسابات عرض تجريبية موثقة. والعرض الحالي يعمل حيًا على شبكة مقدم العرض.
+المستودع على GitHub مع README يتضمن خطوات تشغيل محلية مُتحقق منها وحسابي عرض تجريبي موثقين. قبل العرض: تشغيل الحزمة محليًا والتحقق من <http://localhost:5500> — لا نزعم أن الخدمة تعمل دائمًا أو أنها متاحة على الإنترنت.
 
 **Português:**
-Repositório no GitHub com README de execução local verificada e contas de demonstração acadêmica documentadas. Esta demonstração está rodando ao vivo na rede do apresentador.
+Repositório no GitHub com README de execução local verificada e contas de demonstração acadêmica documentadas. Antes da apresentação: subir o ambiente local e validar <http://localhost:5500> — não afirmamos que o runtime está permanentemente online ou disponível na internet.
 
 ---
 
 ## ملاحظات الإلقاء (لك ممدوح، ليست في العرض)
 
-- 10 شرائح ≈ 8-10 دقائق.
-- الشرائح 5-7 هي الأقوى أمام الزملاء: اعرض التطبيق الحي بجانب العرض (نافذة المتصفح على :5500 بحساب admin ثم cliente).
+- 10 páginas ≈ 8-10 دقائق.
+- الصفحتان 8-9 هما الأقوى أمام الزملاء والأستاذ: أرقام مُتحقق منها بتاريخ، وحدود صادقة تُظهر نضجًا هندسيًا.
+- قبل العرض مباشرة (تسلسل تحقق، وليس خدمة دائمة): شغّل MongoDB ثم الخادم، وافتح <http://localhost:5500> بحساب admin ثم cliente، وتأكد من: الكتالوج يفتح (200)، طلب تجريبي للعميل، منتجات وطلبات الـadmin، وأن العميل يأخذ 403 على واجهة الإدارة.
 - لو سألوا عن "لماذا بدون React؟": Vanilla JS كان قرارًا تعليميًا لإظهار فهم DOM وfetch مباشرة قبل الأطر.
-- لو سألوا عن الأمان: bcrypt + JWT + فصل صلاحيات admin/cliente على مستوى الـAPI.
+- لو سألوا عن الأمان: bcrypt للتجزئة + JWT للجلسات + فصل صلاحيات admin/cliente على مستوى الـAPI (دليل: 403 للعميل).
+- لو سألوا عن النشر أو اللقطات: بصراحة، توجد screenshots محلية حقيقية للمتجر والإدارة والعرض HTML، لكن لا توجد Playwright E2E ولا تغطية بصرية منفصلة لكل البراهين الستة، ولا نشر عام — والـcheckout محاكاة فقط.
+- كلمات السر المعروضة هي كلمة العرض الأكاديمية العامة `<SENHA_DEMO_LOCAL>` للحسابين `admin.demo@autopart.test` و`cliente.demo@autopart.test` — ولا تُعرض أبدًا قيمة `JWT_SECRET` الخاصة.

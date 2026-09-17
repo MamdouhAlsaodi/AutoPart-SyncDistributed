@@ -12,17 +12,19 @@ cp .env.example .env
 # Edite .env: defina um JWT_SECRET privado com pelo menos 32 caracteres.
 # Também defina:
 # SEED_DEMO_DATA=true
-# SEED_DEMO_PASSWORD=AutoPartDemo2026!
+# SEED_DEMO_PASSWORD=<SENHA_DEMO_LOCAL>
 node server/index.js
 ```
 
-Depois, abra <http://localhost:3000>. O endereço é somente local; não há URL pública documentada.
+Depois, abra <http://localhost:5500>. O endereço é somente local; não há URL pública documentada.
+
+A apresentação acadêmica HTML é servida pelo mesmo processo em <http://localhost:5500/apresentacao>. O arquivo-fonte permanece em `docs/apresentacao.html`.
 
 Contas genéricas da demonstração acadêmica local:
 
 - `admin.demo@autopart.test` — perfil administrador
 - `cliente.demo@autopart.test` — perfil cliente
-- Senha acadêmica pública para ambas: `AutoPartDemo2026!`
+- Senha acadêmica pública para ambas: `<SENHA_DEMO_LOCAL>`
 
 Essas contas e essa senha são exclusivamente para uso local/demo acadêmico. Não use a senha em produção. `JWT_SECRET` deve ser privado, independente e não deve ser a senha pública da demonstração. Não versione `.env`.
 

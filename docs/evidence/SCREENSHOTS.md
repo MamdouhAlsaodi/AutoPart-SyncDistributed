@@ -1,14 +1,21 @@
 # Screenshots — demonstração local
 
-Screenshots não foram capturadas automaticamente porque a automação de navegador estava indisponível. Nenhuma imagem é inventada ou apresentada como evidência.
+Evidências visuais reais foram capturadas em 2026-09-16 durante uma sessão local autorizada. A lista canônica e os cuidados de privacidade estão em [`../screenshots/README.md`](../screenshots/README.md).
 
-## Captura manual
+## Capturas disponíveis
 
-1. Inicie a demonstração seguindo as instruções do `README.md`.
-2. Abra `http://localhost:3000` no navegador local.
-3. Capture manualmente a tela inicial/catálogo.
-4. Acesse a conta cliente com `cliente.demo@autopart.test` e capture a tela necessária.
-5. Acesse a conta administrativa com `admin.demo@autopart.test` e capture a área administrativa.
-6. Antes de compartilhar, remova tokens, dados pessoais e qualquer segredo; não inclua o arquivo `.env`.
+- vitrine desktop;
+- vitrine mobile 390×844;
+- área administrativa após autenticação;
+- capa desktop do deck;
+- slide final com notas árabes abertas;
+- slide de demo no viewport mobile.
 
-As capturas manuais devem ser identificadas como evidência local/demo e não devem sugerir URL pública, pagamento real, entrega ou logística.
+## Capturas adicionais opcionais
+
+1. Inicie a demonstração seguindo o `README.md`.
+2. Abra `http://localhost:5500`.
+3. Capture manualmente os fluxos ainda não representados individualmente: busca filtrada, carrinho, cadastro/login, checkout simulado e histórico.
+4. Antes de compartilhar, remova tokens, dados pessoais e qualquer segredo; nunca inclua `.env`.
+
+Toda captura deve ser identificada como evidência local/demo e não deve sugerir URL pública, pagamento real, entrega ou logística.

@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AutoPart-SyncDistributed — apresentação acadêmica local do protótipo de e-commerce de peças automotivas.">
+<title>AutoPart-SyncDistributed — Apresentação acadêmica (protótipo local)</title>
+<style>
+  :root{
+    --navy-0:#0a1120;
+    --navy-1:#0f1729;
+    --navy-2:#17233c;
+    --graphite:#232d44;
+    --copper:#c98a3d;
+    --copper-soft:#e2ac66;
+    --copper-deep:#7c5522;
+    --paper:#ece6d3;
+    --paper-dim:#c9c1ab;
+    --paper-faint:#8f8874;
+    --cyan:#46c8da;
+    --cyan-deep:#0f7f92;
+    --line:rgba(201,138,61,.30);
+    --line-soft:rgba(236,230,211,.12);
+    --card:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012));
+    --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font);
+    background:
+      radial-gradient(1100px 700px at 85% -10%, var(--navy-2), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, #1a2438, transparent 55%),
+      var(--navy-0);
+    color:var(--paper);
+    min-height:100vh;
+    min-height:100dvh;
+    overflow:hidden;
+  }
+  ::selection{background:var(--copper-deep);color:var(--paper)}
+  :focus-visible{outline:3px solid var(--copper-soft);outline-offset:3px;border-radius:6px}
+
+  /* ---------- Chrome (header / progress) ---------- */
+  .chrome{
+    position:fixed;inset:0 0 auto 0;z-index:30;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px clamp(14px,3vw,32px);
+    background:linear-gradient(180deg, rgba(10,17,32,.92), rgba(10,17,32,.55) 75%, transparent);
+    pointer-events:none;
+  }
+  .chrome > *{pointer-events:auto}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:clamp(.8rem,1.6vw,.95rem);letter-spacing:.02em;white-space:nowrap}
+  .brand .muted{color:var(--paper-faint);font-weight:500}
+  .brand-mark{width:20px;height:20px;flex:none}
+  .tools{display:flex;align-items:center;gap:clamp(6px,1vw,14px);flex-wrap:wrap;justify-content:flex-end}
+  .counter{font-variant-numeric:tabular-nums;color:var(--paper-dim);font-size:.9rem;min-width:4.2ch;text-align:center}
+  .btn{
+    font:inherit;font-size:.85rem;font-weight:600;letter-spacing:.02em;
+    color:var(--paper);background:rgba(23,35,60,.7);
+    border:1px solid var(--line);border-radius:999px;
+    padding:7px 14px;cursor:pointer;
+    transition:border-color .2s ease, background .2s ease, transform .12s ease;
+  }
+  .btn:hover{border-color:var(--copper);background:rgba(201,138,61,.14)}
+  .btn:active{transform:translateY(1px)}
+  .btn[disabled]{opacity:.35;cursor:default;transform:none}
+  .btn[disabled]:hover{border-color:var(--line);background:rgba(23,35,60,.7)}
+  .btn[aria-pressed="true"]{background:rgba(201,138,61,.22);border-color:var(--copper)}
+  .progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:31;background:rgba(236,230,211,.08)}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--copper-deep),var(--copper),var(--copper-soft));transition:width .45s ease}
+
+  /* ---------- Deck ---------- */
+  .deck{position:relative;height:100vh;height:100dvh;overflow:hidden}
+  .slide{
+    position:absolute;inset:0;
+    display:grid;place-items:center;
+    padding:88px clamp(20px,5vw,72px) 130px;
+    opacity:0;visibility:hidden;transform:translateX(26px);
+    transition:opacity .45s ease, transform .45s ease, visibility 0s linear .45s;
+    overflow-y:auto;
+  }
+  .slide.active{
+    opacity:1;visibility:visible;transform:none;z-index:1;
+    transition:opacity .45s ease, transform .45s ease;
+  }
+  .slide-inner{width:min(1080px,100%);margin:auto}
+
+  .kicker{
+    color:var(--copper-soft);text-transform:uppercase;
+    letter-spacing:.22em;font-size:clamp(.68rem,1.4vw,.8rem);font-weight:700;
+    margin:0 0 10px;
+  }
+  h1{
+    font-size:clamp(2rem,5.6vw,3.6rem);line-height:1.06;margin:0 0 14px;
+    letter-spacing:-.01em;color:var(--paper);
+  }
+  h2{font-size:clamp(1.5rem,3.6vw,2.3rem);line-height:1.12;margin:0 0 22px;letter-spacing:-.01em}
+  h3{font-size:clamp(1rem,2vw,1.15rem);margin:0 0 8px;color:var(--copper-soft)}
+  p{line-height:1.55}
+  .lede{font-size:clamp(1rem,2.2vw,1.25rem);color:var(--paper-dim);max-width:56ch;margin:0 0 18px}
+  .foot-note{color:var(--paper-faint);font-size:.88rem;margin-top:20px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;padding:0;list-style:none}
+  .chips li{
+    border:1px solid var(--line);border-radius:999px;padding:5px 13px;
+    font-size:.82rem;color:var(--copper-soft);background:rgba(201,138,61,.07);
+  }
+
+  .cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))}
+  .card{
+    background:var(--card);border:1px solid var(--line-soft);
+    border-left:3px solid var(--copper);
+    border-radius:14px;padding:clamp(16px,2.4vw,24px);
+  }
+  .card p{margin:0;color:var(--paper-dim)}
+  .card p strong{color:var(--paper)}
+
+  ul.list,ol.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+  ul.list li{
+    position:relative;padding-left:26px;color:var(--paper-dim);line-height:1.5;
+  }
+  ul.list li::before{
+    content:"";position:absolute;left:2px;top:.52em;
+    width:9px;height:9px;transform:rotate(45deg);
+    background:var(--copper);border-radius:2px;
+  }
+  ul.list li strong{color:var(--paper)}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    font-size:.9em;color:var(--copper-soft);
+    background:rgba(201,138,61,.10);border:1px solid rgba(201,138,61,.22);
+    border-radius:6px;padding:1px 7px;word-break:break-word;
+  }
+
+  .status{
+    display:inline-flex;align-items:center;gap:9px;
+    color:var(--cyan);font-weight:600;font-size:.95rem;
+    border:1px solid rgba(70,200,218,.35);border-radius:10px;
+    padding:9px 14px;background:rgba(70,200,218,.06);
+  }
+  .status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px rgba(70,200,218,.8);flex:none}
+
+  .badge-warn{
+    display:inline-flex;align-items:center;gap:8px;margin-top:16px;
+    color:var(--copper-soft);font-weight:600;font-size:.92rem;
+    border:1px dashed var(--copper);border-radius:10px;padding:8px 14px;
+    background:rgba(201,138,61,.07);
+  }
+
+  /* Architecture diagram */
+  .arch{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+  .arch-box{
+    flex:1 1 240px;min-width:0;
+    background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:18px 20px;
+  }
+  .arch-box ul{margin:0;padding-left:18px;color:var(--paper-dim);line-height:1.5}
+  .arch-box li{margin:3px 0}
+  .arch-box .layer{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--paper-faint);font-weight:700}
+  .arch-arrow{
+    flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:4px;color:var(--copper);font-weight:700;min-width:58px;text-align:center;
+  }
+  .arch-arrow .lbl{font-size:.68rem;letter-spacing:.06em;color:var(--paper-faint);font-weight:600;text-transform:uppercase}
+  .arch-arrow svg{width:34px;height:22px}
+  .caption{color:var(--paper-faint);font-size:.9rem;margin-top:16px;max-width:70ch}
+
+  /* Evidence */
+  .stat{
+    display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+    margin:0 0 20px;
+  }
+  .stat-num{
+    font-size:clamp(2.6rem,7vw,4.4rem);font-weight:800;color:var(--cyan);
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+    text-shadow:0 0 26px rgba(70,200,218,.35);
+  }
+  .stat-cap{color:var(--paper-dim);max-width:44ch;line-height:1.45}
+  .checks{display:grid;gap:9px}
+  .checks li{position:relative;padding-left:28px;color:var(--paper-dim);line-height:1.45}
+  .checks li::before{
+    content:"✓";position:absolute;left:2px;top:0;
+    color:var(--cyan);font-weight:800;
+  }
+
+  /* Limits */
+  .limits li::before{background:transparent;border:2px solid var(--copper);border-radius:50%;width:9px;height:9px;transform:none;top:.42em}
+
+  /* Demo steps */
+  .steps{counter-reset:step}
+  .steps li{
+    counter-increment:step;position:relative;padding-left:46px;
+    color:var(--paper-dim);line-height:1.5;margin-bottom:12px;
+  }
+  .steps li::before{
+    content:counter(step);
+    position:absolute;left:0;top:.05em;
+    width:30px;height:30px;display:grid;place-items:center;
+    border:1px solid var(--copper);border-radius:50%;
+    color:var(--copper-soft);font-weight:800;font-size:.9rem;
+    background:rgba(201,138,61,.08);
+  }
+  .steps li strong{color:var(--paper)}
+
+  /* Presenter notes (Arabic, hidden by default) */
+  .pnotes{display:none}
+  body.notes-on .pnotes{
+    display:block;position:fixed;left:50%;transform:translateX(-50%);
+    bottom:86px;z-index:25;width:min(880px,calc(100% - 32px));
+    background:rgba(15,23,41,.96);border:1px solid var(--line);
+    border-radius:14px;padding:16px 22px;
+    box-shadow:0 14px 44px rgba(0,0,0,.5);
+  }
+  .pnotes h2{font-size:.85rem;margin:0 0 8px;color:var(--copper-soft);letter-spacing:.08em}
+  .pnotes p{margin:0;font-size:1.02rem;line-height:1.8;color:var(--paper-dim)}
+
+  /* ---------- Supply-chain schematic (signature) ---------- */
+  .schematic{
+    position:fixed;left:0;right:0;bottom:0;z-index:10;
+    height:64px;pointer-events:none;
+    background:linear-gradient(180deg,transparent,rgba(10,17,32,.85));
+  }
+  .schematic svg{width:100%;height:100%;display:block}
+  .schem-track{stroke:rgba(236,230,211,.14);stroke-width:2;fill:none}
+  .schem-prog{
+    stroke:url(#schemGrad);stroke-width:2.5;fill:none;
+    stroke-dasharray:1000;stroke-dashoffset:1000;
+    transition:stroke-dashoffset .6s ease;
+  }
+  .schem-flow{
+    stroke:var(--copper-soft);stroke-width:2;fill:none;
+    stroke-dasharray:3 15;opacity:.5;
+    animation:schemflow 1.15s linear infinite;
+  }
+  @keyframes schemflow{to{stroke-dashoffset:-18px}}
+  .schem-node .ring{fill:var(--navy-1);stroke:rgba(201,138,61,.4);stroke-width:2;transition:stroke .3s ease, fill .3s ease}
+  .schem-node .core{fill:transparent;transition:fill .3s ease}
+  .schem-node.lit .ring{stroke:var(--copper)}
+  .schem-node.lit .core{fill:var(--copper-soft)}
+  .schem-label{
+    fill:var(--paper-faint);font-size:11px;font-family:var(--font);
+    letter-spacing:.14em;text-transform:uppercase;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:640px){
+    /* Chrome em duas linhas no mobile: marca, depois ferramentas quebrando em grade. */
+    .chrome{flex-wrap:wrap;row-gap:8px;padding:10px 14px}
+    .brand{flex:1 1 100%;min-width:0}
+    .tools{flex:1 1 100%;justify-content:flex-start;gap:8px}
+    .tools nav{flex:1 1 100%;flex-wrap:wrap;gap:8px}
+    .btn{flex:1 1 auto;min-height:38px;padding:8px 12px;font-size:.82rem;text-align:center}
+    .tools nav .btn{flex:1 1 0}
+    .slide{padding:152px 18px 120px}
+    .brand .muted{display:none}
+    .arch{flex-direction:column}
+    .arch-arrow{flex-direction:row;min-height:34px}
+    .arch-arrow svg{transform:rotate(90deg)}
+    .counter{display:none}
+  }
+  @media (max-height:520px){
+    .schematic{display:none}
+    .slide{padding-bottom:80px}
+  }
+
+  /* ---------- Reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    .schem-flow{display:none}
+  }
+
+  /* ---------- Print / PDF ---------- */
+  @media print{
+    @page{size:13in 7.5in;margin:0}
+    html,body{background:#fff !important;color:#182035;overflow:visible}
+    .chrome,.progress,.schematic,.pnotes{display:none !important}
+    .deck{height:auto;overflow:visible}
+    .slide{
+      position:static;opacity:1 !important;visibility:visible !important;transform:none !important;
+      min-height:97vh;padding:56px 72px;page-break-after:always;break-after:page;
+      display:flex;align-items:flex-start;
+    }
+    h1,h2{color:#182035}
+    .kicker,h3{color:#8a5a24}
+    .lede,.card p,ul.list li,.steps li,.checks li,.caption,.foot-note,.stat-cap,.arch-box ul{color:#3a4358}
+    .card,.arch-box{background:#faf7f0;border-color:#d8cfb8;border-left-color:#b5803c}
+    .chips li{color:#8a5a24;border-color:#d8cfb8;background:#f6f1e6}
+    code{color:#8a5a24;background:#f6f1e6;border-color:#d8cfb8}
+    .status{color:#0f7f92;border-color:#9ad9e2;background:#f2fbfc}
+    .status::before{background:#0f7f92;box-shadow:none}
+    .checks li::before{color:#0f7f92}
+    .stat-num{color:#0f7f92;text-shadow:none}
+    .steps li::before{color:#8a5a24;border-color:#b5803c;background:#f6f1e6}
+    .badge-warn{color:#8a5a24;border-color:#b5803c;background:#f6f1e6}
+    .brand-mark .bm-ring{stroke:#b5803c}
+    .brand-mark .bm-core{fill:#b5803c}
+  }
+</style>
+<noscript><style>
+  .slide{position:static;opacity:1;visibility:visible;transform:none;min-height:100vh}
+  .chrome,.progress,.schematic{display:none}
+</style></noscript>
+</head>
+<body>
+
+<div class="progress" role="presentation"><div class="progress-bar" id="progressBar"></div></div>
+
+<header class="chrome">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle class="bm-ring" cx="12" cy="12" r="8.5" fill="none" stroke="#c98a3d" stroke-width="2.4"/>
+      <circle class="bm-core" cx="12" cy="12" r="3.2" fill="#e2ac66"/>
+      <rect x="10.9" y="0.5" width="2.2" height="4" rx="1" fill="#c98a3d"/>
+      <rect x="10.9" y="19.5" width="2.2" height="4" rx="1" fill="#c98a3d"/>
+      <rect x="0.5" y="10.9" width="4" height="2.2" rx="1" fill="#c98a3d"/>
+      <rect x="19.5" y="10.9" width="4" height="2.2" rx="1" fill="#c98a3d"/>
+    </svg>
+    AutoPart-SyncDistributed <span class="muted">· protótipo acadêmico local</span>
+  </div>
+  <div class="tools">
+    <span class="counter" id="counter" aria-live="polite" aria-label="Slide atual">1 / 12</span>
+    <button class="btn" id="btnNotes" type="button" aria-pressed="false" aria-controls="notesPanel">Notas (عربي)</button>
+    <button class="btn" id="btnFs" type="button">Tela cheia</button>
+    <nav aria-label="Navegação de slides" style="display:flex;gap:8px">
+      <button class="btn" id="btnPrev" type="button" aria-label="Slide anterior">← Anterior</button>
+      <button class="btn" id="btnNext" type="button" aria-label="Próximo slide">Próxima →</button>
+    </nav>
+  </div>
+</header>
+
+<main class="deck" id="deck" aria-live="off">
+
+  <!-- 1 · Título e tese -->
+  <section class="slide" id="slide-1" role="group" aria-roledescription="slide" aria-label="Slide 1 de 12" aria-labelledby="h-s1">
+    <div class="slide-inner">
+      <p class="kicker">Estudo de caso acadêmico · Execução local · 2026</p>
+      <h1 id="h-s1">AutoPart-SyncDistributed</h1>
+      <p class="lede"><strong>Protótipo acadêmico local de e-commerce de peças automotivas</strong> — da gestão manual de estoque da oficina a um protótipo distribuído: cliente, API e banco de dados separados de verdade, com escopo honesto.</p>
+      <ul class="chips">
+        <li>Vanilla JavaScript</li>
+        <li>Node.js · Express</li>
+        <li>MongoDB · Mongoose</li>
+        <li>JWT</li>
+        <li>bcryptjs</li>
+      </ul>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>عرّف المشروع: نموذج أولي أكاديمي محلي لمتجر قطع غيار. الفكرة الأساسية: فصل حقيقي بين الواجهة والخادم وقاعدة البيانات، وكل شيء يعمل محليًا بدون سحابة.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 2 · Problema e valor -->
+  <section class="slide" id="slide-2" role="group" aria-roledescription="slide" aria-label="Slide 2 de 12" aria-labelledby="h-s2">
+    <div class="slide-inner">
+      <p class="kicker">Motivação</p>
+      <h2 id="h-s2">Problema e valor proposto</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>O problema</h3>
+          <p>Estoque controlado à mão: anotações lentas, erros de contagem, preço inconsistente e <strong>nenhum histórico confiável de pedidos</strong>.</p>
+        </div>
+        <div class="card">
+          <h3>O valor proposto</h3>
+          <p>Catálogo digital com busca e filtros, carrinho e pedidos persistentes, e <strong>estoque centralizado no servidor</strong> como fonte única de verdade.</p>
+        </div>
+      </div>
+      <p class="foot-note">Tudo em execução local — protótipo destinado à demonstração acadêmica, sem operação comercial.</p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>ابدأ من مشكلة الورشة: دفتر ومخزون يدوي بلا سجل. القيمة: رقمنة الكتالوج والطلبات مع مخزون موثوق لدى الخادم كمصدر وحيد للحقيقة.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 3 · Usuários e papéis -->
+  <section class="slide" id="slide-3" role="group" aria-roledescription="slide" aria-label="Slide 3 de 12" aria-labelledby="h-s3">
+    <div class="slide-inner">
+      <p class="kicker">Quem usa</p>
+      <h2 id="h-s3">Usuários e papéis</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Cliente final</h3>
+          <p>Explora o catálogo, busca peças compatíveis com o veículo, monta o carrinho, finaliza o pedido <strong>(checkout simulado)</strong> e acompanha seu histórico.</p>
+        </div>
+        <div class="card">
+          <h3>Administrador</h3>
+          <p>Cadastra e edita peças, preço e estoque, acompanha os pedidos e atualiza seus status — <strong>sempre via API protegida</strong> por perfil.</p>
+        </div>
+      </div>
+      <p class="foot-note">Contas genéricas de demonstração acadêmica: <code>admin.demo@autopart.test</code> · <code>cliente.demo@autopart.test</code> — senha pública de demonstração: <code><SENHA_DEMO_LOCAL></code></p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>دوران فقط: العميل يشتري، والمشرف يدير. اذكر الحسابين التجريبيين العامين وكلمة السر الأكاديمية المعتمدة للعرض المحلي.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 4 · Arquitetura -->
+  <section class="slide" id="slide-4" role="group" aria-roledescription="slide" aria-label="Slide 4 de 12" aria-labelledby="h-s4">
+    <div class="slide-inner">
+      <p class="kicker">Arquitetura</p>
+      <h2 id="h-s4">Navegador → API Express → MongoDB</h2>
+      <div class="arch" role="img" aria-label="Diagrama de arquitetura: o navegador em Vanilla JavaScript envia HTTP e JSON com JWT para a API Express em Node.js, que valida e autoriza e acessa o MongoDB por Mongoose.">
+        <div class="arch-box">
+          <span class="layer">Camada 1</span>
+          <h3>Navegador</h3>
+          <ul>
+            <li>Vanilla JS (HTML/CSS/JS)</li>
+            <li>Carrinho em <code>localStorage</code></li>
+            <li>Consome a API via fetch</li>
+          </ul>
+        </div>
+        <div class="arch-arrow" aria-hidden="true">
+          <span class="lbl">HTTP · JSON · JWT</span>
+          <svg viewBox="0 0 34 22"><path d="M2 11h26M20 3l9 8-9 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="arch-box">
+          <span class="layer">Camada 2</span>
+          <h3>API Express</h3>
+          <ul>
+            <li>Node.js · REST em JSON</li>
+            <li>Valida dados, preço e estoque</li>
+            <li>Aplica JWT e autorização por perfil</li>
+          </ul>
+        </div>
+        <div class="arch-arrow" aria-hidden="true">
+          <span class="lbl">Mongoose</span>
+          <svg viewBox="0 0 34 22"><path d="M2 11h26M20 3l9 8-9 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="arch-box">
+          <span class="layer">Camada 3</span>
+          <h3>MongoDB</h3>
+          <ul>
+            <li>Produtos, usuários e pedidos</li>
+            <li>Persistência local real</li>
+            <li>MongoDB em loopback (27017)</li>
+          </ul>
+        </div>
+      </div>
+      <p class="caption">O servidor é a autoridade: preço, estoque e pedido são decididos e revalidados no back-end — nunca somente no navegador.</p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>اشرح رحلة الطلب: المتصفح يعرض فقط، الـAPI تقرر وتتحقق، وMongoDB يحفظ. المتصفح لا يملك قرار السعر أو المخزون أبدًا.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 5 · Vitrine -->
+  <section class="slide" id="slide-5" role="group" aria-roledescription="slide" aria-label="Slide 5 de 12" aria-labelledby="h-s5">
+    <div class="slide-inner">
+      <p class="kicker">Frente de loja</p>
+      <h2 id="h-s5">Vitrine, catálogo e busca</h2>
+      <ul class="list">
+        <li><strong>Vitrine pública e catálogo</strong> em <code>GET /api/catalogo</code> — consulta sem login.</li>
+        <li><strong>Busca por nome, marca e modelo</strong>, com filtros por categoria e disponibilidade.</li>
+        <li><strong>Ficha da peça:</strong> compatibilidade (marca/modelo), preço e estoque visível.</li>
+        <li>Navegação direta para carrinho, conta e — com login administrador — a área administrativa.</li>
+      </ul>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>اعرض البحث والفلاتر: اسم وماركة وموديل، فلترة بالقسم والتوفر، وفترة القطعة وتوافقها مع المركبة.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 6 · Carrinho e pedidos -->
+  <section class="slide" id="slide-6" role="group" aria-roledescription="slide" aria-label="Slide 6 de 12" aria-labelledby="h-s6">
+    <div class="slide-inner">
+      <p class="kicker">Fluxo de compra</p>
+      <h2 id="h-s6">Carrinho, checkout e histórico</h2>
+      <ol class="steps">
+        <li><strong>Carrinho no navegador</strong> — itens e quantidades em <code>localStorage</code>.</li>
+        <li><strong>Checkout autenticado</strong> — <code>POST /api/orders/checkout</code> revalida itens, preços e estoque no servidor.</li>
+        <li><strong>Pedido persistente</strong> — gravado no MongoDB com status próprio.</li>
+        <li><strong>Histórico do cliente</strong> — <code>GET /api/orders/me</code> e <code>GET /api/orders/:id</code>.</li>
+      </ol>
+      <p class="badge-warn">⚠ Checkout simulado — sem pagamento real.</p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>وضّح أن السلة في المتصفح لكن الطلب يُعاد التحقق منه في الخادم ويُحفظ فعليًا في قاعدة البيانات. الدفع محاكاة فقط — قلها بوضوح.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 7 · Administração -->
+  <section class="slide" id="slide-7" role="group" aria-roledescription="slide" aria-label="Slide 7 de 12" aria-labelledby="h-s7">
+    <div class="slide-inner">
+      <p class="kicker">Operação</p>
+      <h2 id="h-s7">Administração e inventário</h2>
+      <ul class="list">
+        <li><strong>Área administrativa</strong> atrás do prefixo protegido <code>/api/admin</code>.</li>
+        <li><strong>Criação e edição de peças:</strong> nome, compatibilidade, preço e estoque.</li>
+        <li><strong>Pedidos:</strong> acompanhamento e atualização de status.</li>
+        <li>Consulta e manutenção apoiadas na <strong>autorização por perfil no servidor</strong>.</li>
+      </ul>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>الإدارة خلف صلاحية admin على مستوى الـAPI: تعديل المنتجات والسعر والمخزون ومتابعة الطلبات وحالاتها.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 8 · Segurança -->
+  <section class="slide" id="slide-8" role="group" aria-roledescription="slide" aria-label="Slide 8 de 12" aria-labelledby="h-s8">
+    <div class="slide-inner">
+      <p class="kicker">Segurança</p>
+      <h2 id="h-s8">Segurança e autorização</h2>
+      <ul class="list">
+        <li><strong>Senhas com hash <code>bcryptjs</code></strong> — nunca armazenadas nem devolvidas em texto puro.</li>
+        <li><strong>Sessões JWT assinadas</strong> — <code>JWT_SECRET</code> privado, longo e fornecido por configuração; nunca versionado.</li>
+        <li><strong>Autorização por perfil verificada no servidor</strong> — não apenas ocultada na interface.</li>
+      </ul>
+      <p style="margin-top:22px"><span class="status">Verificado localmente: cliente autenticado recebe 403 no endpoint administrativo</span></p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>الأمان: bcrypt للتجزئة، JWT للجلسات، والتفويض في الخادم. الدليل العملي: العميل يأخذ 403 عند محاولة الوصول لواجهة الإدارة.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 9 · Evidências -->
+  <section class="slide" id="slide-9" role="group" aria-roledescription="slide" aria-label="Slide 9 de 12" aria-labelledby="h-s9">
+    <div class="slide-inner">
+      <p class="kicker">Qualidade verificada</p>
+      <h2 id="h-s9">Evidências de teste e execução</h2>
+      <p class="stat">
+        <span class="stat-num">22/22</span>
+        <span class="stat-cap">testes automatizados aprovados nas Fases 1–6 · <strong>0 falhas</strong> · verificação de <strong>16/09/2026</strong></span>
+      </p>
+      <ul class="checks">
+        <li>Home e catálogo respondem 200</li>
+        <li>Login de admin e de cliente com a senha de demonstração configurada</li>
+        <li>Pedidos do cliente autenticado: 200</li>
+        <li>Produtos e pedidos do administrador: 200</li>
+        <li>Cliente recebe 403 no endpoint administrativo</li>
+      </ul>
+      <p class="foot-note">Evidência de execução local; não representa aceitação final nem ambiente público.</p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>الأرقام مُتحقق منها في 2026-09-16: 22 اختبارًا ناجحًا و0 فشل عبر المراحل 1–6، وفحوص محلية 200/403. اذكر التاريخ — يعطي مصداقية.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 10 · Limites -->
+  <section class="slide" id="slide-10" role="group" aria-roledescription="slide" aria-label="Slide 10 de 12" aria-labelledby="h-s10">
+    <div class="slide-inner">
+      <p class="kicker">Escopo honesto</p>
+      <h2 id="h-s10">Limites do protótipo</h2>
+      <ul class="list limits">
+        <li><strong>Checkout simulado:</strong> não há pagamento, entrega, logística ou integração externa.</li>
+        <li><strong>Execução local acadêmica:</strong> sem deploy público, sem URL pública e sem SLA.</li>
+        <li><strong>Sem suíte Playwright E2E:</strong> screenshots locais reais cobrem vitrine, administração e este deck; não são seis provas visuais separadas.</li>
+        <li><strong>Protótipo de estudo:</strong> reutilização exige nova avaliação de segurança, privacidade e operação.</li>
+      </ul>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>كن صريحًا: لا دفع حقيقي ولا نشر عام ولا Playwright E2E. توجد لقطات محلية حقيقية للمتجر والإدارة والعرض، لكنها ليست ستة أدلة بصرية منفصلة.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 11 · Demonstração -->
+  <section class="slide" id="slide-11" role="group" aria-roledescription="slide" aria-label="Slide 11 de 12" aria-labelledby="h-s11">
+    <div class="slide-inner">
+      <p class="kicker">Antes de apresentar</p>
+      <h2 id="h-s11">Demonstração local — sequência de verificação</h2>
+      <ol class="steps">
+        <li>Subir o banco: <code>docker compose up -d mongodb</code></li>
+        <li>Preparar <code>.env</code> a partir de <code>.env.example</code>: <code>JWT_SECRET</code> privado (32+ caracteres), <code>SEED_DEMO_DATA=true</code>, <code>SEED_DEMO_PASSWORD=<SENHA_DEMO_LOCAL></code></li>
+        <li>Iniciar o servidor: <code>node server/index.js</code></li>
+        <li>Abrir <code>http://localhost:5500</code></li>
+        <li>Entrar com <code>admin.demo@autopart.test</code> e com <code>cliente.demo@autopart.test</code> — senha de demonstração <code><SENHA_DEMO_LOCAL></code></li>
+        <li>Checklist rápido: catálogo 200 · pedido do cliente · produtos e pedidos do admin · 403 do cliente em <code>/api/admin</code></li>
+      </ol>
+      <p class="foot-note">Isto é uma checagem pré-apresentação; o runtime local não é alegado como permanentemente online. Nunca exibir o valor de <code>JWT_SECRET</code>.</p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>هذه قائمة فحص قبل العرض وليست خدمة دائمة: شغّل MongoDB ثم الخادم، افتح المنفذ 5500، وجرّب الحسابين، وتحقق من 200/403 قبل دخول القاعة.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 12 · Conclusão -->
+  <section class="slide" id="slide-12" role="group" aria-roledescription="slide" aria-label="Slide 12 de 12" aria-labelledby="h-s12">
+    <div class="slide-inner">
+      <p class="kicker">Fechamento</p>
+      <h2 id="h-s12">Conclusão e repositório</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>O que ficou demonstrado</h3>
+          <p>Separação real de camadas, autorização no servidor, checkout simulado declarado como tal e <strong>22/22 testes verificados</strong> — um protótipo local honesto.</p>
+        </div>
+        <div class="card">
+          <h3>Repositório GitHub</h3>
+          <p>Código, README com execução local verificada e documentação no repositório do projeto <strong>AutoPart-SyncDistributed</strong> — base reaproveitável para trabalhos futuros após nova avaliação.</p>
+        </div>
+      </div>
+      <p class="lede" style="margin-top:24px">Obrigado! Perguntas?</p>
+      <aside class="pnotes" lang="ar" dir="rtl" hidden>
+        <h2>ملاحظة الشرح</h2>
+        <p>اختم بالنطاق الصادق والمستودع: الكود والتوثيق على GitHub، والأساس قابل لإعادة الاستخدام بعد مراجعة وتقييم جديد. اشكر الحضور وافتح باب الأسئلة.</p>
+      </aside>
+    </div>
+  </section>
+
+</main>
+
+<div class="notes" id="notesPanel" hidden></div>
+
+<div class="schematic" aria-hidden="true">
+  <svg viewBox="0 0 1200 64" preserveAspectRatio="xMidYMid meet" focusable="false">
+    <defs>
+      <linearGradient id="schemGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#7c5522"/>
+        <stop offset=".55" stop-color="#c98a3d"/>
+        <stop offset="1" stop-color="#e2ac66"/>
+      </linearGradient>
+      <mask id="schemMask">
+        <rect id="schemMaskRect" x="0" y="0" width="0" height="64" fill="#fff"/>
+      </mask>
+    </defs>
+    <path class="schem-track" d="M40 32 H1160"/>
+    <path class="schem-prog" id="schemProg" d="M40 32 H1160" pathLength="1000"/>
+    <g mask="url(#schemMask)">
+      <path class="schem-flow" d="M40 32 H1160"/>
+    </g>
+    <g id="schemNodes">
+      <g class="schem-node" transform="translate(40,32)"><circle class="ring" r="8"/><circle class="core" r="3.4"/></g>
+      <g class="schem-node" transform="translate(142,32)"><rect class="ring" x="-7" y="-7" width="14" height="14" rx="2" transform="rotate(45)"/><rect class="core" x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)"/></g>
+      <g class="schem-node" transform="translate(244,32)"><circle class="ring" r="8"/><circle class="core" r="3.4"/></g>
+      <g class="schem-node" transform="translate(346,32)"><rect class="ring" x="-7" y="-7" width="14" height="14" rx="2" transform="rotate(45)"/><rect class="core" x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)"/></g>
+      <g class="schem-node" transform="translate(447,32)"><circle class="ring" r="8"/><circle class="core" r="3.4"/></g>
+      <g class="schem-node" transform="translate(549,32)"><rect class="ring" x="-7" y="-7" width="14" height="14" rx="2" transform="rotate(45)"/><rect class="core" x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)"/></g>
+      <g class="schem-node" transform="translate(651,32)"><circle class="ring" r="8"/><circle class="core" r="3.4"/></g>
+      <g class="schem-node" transform="translate(753,32)"><rect class="ring" x="-7" y="-7" width="14" height="14" rx="2" transform="rotate(45)"/><rect class="core" x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)"/></g>
+      <g class="schem-node" transform="translate(855,32)"><circle class="ring" r="8"/><circle class="core" r="3.4"/></g>
+      <g class="schem-node" transform="translate(956,32)"><rect class="ring" x="-7" y="-7" width="14" height="14" rx="2" transform="rotate(45)"/><rect class="core" x="-2.6" y="-2.6" width="5.2" height="5.2" transform="rotate(45)"/></g>
+      <g class="schem-node" transform="translate(1058,32)"><circle class="ring" r="8"/><circle class="core" r="3.4"/></g>
+      <g class="schem-node" transform="translate(1160,32)"><rect class="ring" x="-8" y="-8" width="16" height="16" rx="3" transform="rotate(45)"/><rect class="core" x="-3" y="-3" width="6" height="6" transform="rotate(45)"/></g>
+    </g>
+  </svg>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
+  var total = slides.length;
+  var counter = document.getElementById('counter');
+  var progressBar = document.getElementById('progressBar');
+  var btnPrev = document.getElementById('btnPrev');
+  var btnNext = document.getElementById('btnNext');
+  var btnNotes = document.getElementById('btnNotes');
+  var btnFs = document.getElementById('btnFs');
+  var notesPanel = document.getElementById('notesPanel');
+  var schemProg = document.getElementById('schemProg');
+  var schemMaskRect = document.getElementById('schemMaskRect');
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('#schemNodes .schem-node'));
+
+  var current = -1;
+
+  function clamp(i) { return Math.max(0, Math.min(total - 1, i)); }
+
+  function headingOf(slide) {
+    var h = slide.querySelector('h1, h2');
+    return h ? h.textContent : '';
+  }
+
+  function renderNotes(i) {
+    notesPanel.innerHTML = '';
+    var note = slides[i].querySelector('.pnotes');
+    if (!note) { notesPanel.hidden = true; return; }
+    if (document.body.classList.contains('notes-on')) {
+      var t = document.createElement('h2');
+      t.textContent = 'ملاحظات الشرح — ' + headingOf(slides[i]);
+      var p = document.createElement('p');
+      p.setAttribute('lang', 'ar');
+      p.setAttribute('dir', 'rtl');
+      var src = note.querySelector('p');
+      p.textContent = src ? src.textContent : '';
+      notesPanel.appendChild(t);
+      notesPanel.appendChild(p);
+      notesPanel.hidden = false;
+    } else {
+      notesPanel.hidden = true;
+    }
+  }
+
+  function apply(i, updateHash) {
+    i = clamp(i);
+    if (i === current) { if (updateHash) syncHash(i); return; }
+    current = i;
+    slides.forEach(function (s, idx) {
+      var active = idx === i;
+      s.classList.toggle('active', active);
+      s.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+    counter.textContent = (i + 1) + ' / ' + total;
+    progressBar.style.width = (total > 1 ? (i / (total - 1)) * 100 : 100) + '%';
+    var p = total > 1 ? i / (total - 1) : 1;
+    if (schemProg) schemProg.style.strokeDashoffset = String(1000 * (1 - p));
+    if (schemMaskRect) schemMaskRect.setAttribute('width', String(1200 * p));
+    nodes.forEach(function (nd, idx) { nd.classList.toggle('lit', idx <= i); });
+    btnPrev.disabled = i === 0;
+    btnNext.disabled = i === total - 1;
+    renderNotes(i);
+    if (updateHash) syncHash(i);
+  }
+
+  function go(i) { apply(i, true); }
+
+  function syncHash(i) {
+    var h = '#slide-' + (i + 1);
+    try { history.replaceState(null, '', h); }
+    catch (e) { /* ambiente sem replaceState: mantém apenas o estado interno */ }
+  }
+
+  function indexFromHash() {
+    var m = /^#slide-(\d+)$/.exec(location.hash);
+    return m ? clamp(parseInt(m[1], 10) - 1) : 0;
+  }
+
+  btnPrev.addEventListener('click', function () { go(current - 1); });
+  btnNext.addEventListener('click', function () { go(current + 1); });
+
+  window.addEventListener('hashchange', function () { apply(indexFromHash(), false); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'PageDown':
+        go(current + 1); break;
+      case 'ArrowLeft':
+      case 'PageUp':
+        go(current - 1); break;
+      case 'Home':
+        go(0); break;
+      case 'End':
+        go(total - 1); break;
+      default:
+        return;
+    }
+    e.preventDefault();
+  });
+
+  var touchX = 0, touchY = 0;
+  deck.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1) return;
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+  }, { passive: true });
+  deck.addEventListener('touchend', function (e) {
+    var dx = e.changedTouches[0].clientX - touchX;
+    var dy = e.changedTouches[0].clientY - touchY;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      go(current + (dx < 0 ? 1 : -1));
+    }
+  }, { passive: true });
+
+  btnNotes.addEventListener('click', function () {
+    var on = document.body.classList.toggle('notes-on');
+    btnNotes.setAttribute('aria-pressed', on ? 'true' : 'false');
+    renderNotes(current);
+  });
+
+  if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
+    btnFs.addEventListener('click', function () {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        var req = document.documentElement.requestFullscreen();
+        if (req && typeof req.catch === 'function') req.catch(function () {});
+      }
+    });
+  } else {
+    btnFs.disabled = true;
+    btnFs.title = 'Tela cheia não suportada neste navegador';
+  }
+
+  apply(indexFromHash(), false);
+})();
+</script>
+</body>
+</html>

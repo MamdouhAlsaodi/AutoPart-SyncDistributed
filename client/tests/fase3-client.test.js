@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const root = '/home/server/Projects/AutoPart-SyncDistributed/client';
+const root = require('node:path').resolve(__dirname, '..');
 function cart(storage) { const c={localStorage:storage}; vm.runInNewContext(fs.readFileSync(`${root}/js/cart.js`,'utf8')+';globalThis.result=Cart;',c); return c.result; }
 test('cart persists normalized money and operations',()=>{let data={};const s={getItem:k=>data[k]??null,setItem:(k,v)=>data[k]=v};let C=cart(s);assert.equal(C.addProduct({_id:'x',nome:'P',preco_venda:19.99}),true);C.addProduct({id:'x',nome:'P',preco_venda:19.99});C.setQuantity('x',3);assert.equal(C.total(),5997);C.remove('x');assert.deepEqual(Array.from(C.items()),[]);C.addProduct({id:'x',nome:'P',preco_venda:19.99});C.setQuantity('x',3);assert.equal(cart(s).total(),5997);});
 test('cart recovers malformed storage and rejects invalid data',()=>{let data={'autopart.cart.v1':'bad'};const s={getItem:k=>data[k]??null,setItem:(k,v)=>data[k]=v};let C=cart(s);assert.deepEqual(Array.from(C.items()),[]);assert.equal(C.addProduct({id:'',preco_venda:2}),false);assert.equal(C.addProduct({id:'x',preco_venda:'no'}),false);assert.equal(C.addProduct({id:'x',preco_venda:2}),true);assert.equal(C.setQuantity('x',0),false);});

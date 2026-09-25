@@ -1,8 +1,8 @@
 # AutoPart-SyncDistributed
 
-Protótipo acadêmico local de catálogo, estoque e pedidos simulados de autopeças. A implementação **atual** usa **Node.js + Express 5**, cliente em HTML/CSS/JavaScript e **MongoDB + Mongoose**. O plano inicial que mencionava PHP/Slim e SQL Server não descreve este código.
+O AutoPart-SyncDistributed é um protótipo acadêmico para a disciplina de Negócios Eletrônicos. A aplicação organiza a consulta a um catálogo de autopeças, o controle de estoque e o registro de pedidos simulados. Utiliza Node.js com Express 5 no servidor, HTML/CSS/JavaScript na interface e MongoDB com Mongoose para persistência.
 
-> Escopo: demonstração acadêmica local, não loja em produção. Checkout não processa pagamentos, entregas ou integrações externas.
+O fluxo de pedidos representa uma solicitação no ambiente de demonstração, sem processamento de pagamentos, faturamento ou entrega. A execução documentada é local; o projeto não constitui uma loja em produção.
 
 ## Estrutura e framework
 
@@ -10,9 +10,9 @@ Protótipo acadêmico local de catálogo, estoque e pedidos simulados de autope�
 - `server/src/app.js`: monta as rotas Express, respostas JSON, cliente estático e apresentação.
 - `server/src/routes/`, `controllers/`, `models/`, `middleware/`: API, regras de acesso e persistência.
 - `client/`: interface consumidora da API; `docs/apresentacao.html`: slides da demonstração.
-- [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md): descrição técnica do framework e sua aplicação no projeto, com referências ao código e limites reais.
+- [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md): análise da estrutura da aplicação e do fluxo de pedidos para a disciplina.
 
-O navegador e a API são separados logicamente, mas o **mesmo processo Express serve também os arquivos estáticos**. MongoDB é um serviço separado; `compose.yaml` configura uma instância local de membro único com replica set para as transações do checkout. Isto não é um cluster distribuído nem alta disponibilidade.
+O navegador acessa a API por requisições HTTP, enquanto o processo Express disponibiliza também os arquivos estáticos da interface. O MongoDB opera como serviço local separado. O `compose.yaml` configura um replica set de membro único para as transações do pedido; a aplicação não dispõe de alta disponibilidade.
 
 ## Requisitos
 
@@ -72,6 +72,6 @@ node --test tests/fase6-seed.test.js
 
 Os testes de banco usam `127.0.0.1:27018/autopart_fase1_test` com `NODE_ENV=test`; não aponte testes destrutivos para o banco de demonstração. `npm test` não é a suíte configurada neste repositório. Os resultados devem ser verificados novamente antes de cada apresentação; um relatório anterior está em [`docs/READINESS-ASSESSMENT-2026-09-16.md`](docs/READINESS-ASSESSMENT-2026-09-16.md).
 
-## Material para o professor
+## Documentação acadêmica
 
-Comece pelo [framework técnico e decisões arquiteturais](docs/FRAMEWORK.md), seguido do [relatório do projeto](RELATORIO_PROJETO.md) e da [apresentação HTML](docs/apresentacao.html). A apresentação é acessível no navegador em `/apresentacao` quando a aplicação local está rodando. Consulte também o [roteiro da apresentação](docs/presentation-script.ar-pt.md). O projeto já tem uma implementação demonstrável, mas não declara implantação pública ou disponibilidade contínua.
+A [análise da estrutura e do fluxo de pedidos](docs/FRAMEWORK.md) apresenta a aplicação no contexto da disciplina de Negócios Eletrônicos. O [relatório do projeto](RELATORIO_PROJETO.md) registra o escopo e as evidências da implementação; a [apresentação HTML](docs/apresentacao.html) pode ser aberta em `/apresentacao` durante a execução local. Há também um [roteiro de apresentação](docs/presentation-script.ar-pt.md). Nenhum desses materiais constitui evidência de implantação pública ou operação comercial.

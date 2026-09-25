@@ -1,55 +1,56 @@
-# Framework utilizado — AutoPart-SyncDistributed
+# Estrutura da aplicação AutoPart-SyncDistributed
 
-Documento técnico para apresentação acadêmica. Descreve **a implementação presente no repositório**, não uma proposta de migração. O relatório inicial mencionava Slim Framework (PHP) e Microsoft SQL Server; essas tecnologias **não aparecem na aplicação atual**. O backend foi desenvolvido em **Express 5 sobre Node.js**, com **MongoDB/Mongoose** como persistência.
+## 1. Apresentação
 
-## 1. Objetivo e recorte
+O AutoPart-SyncDistributed é um protótipo de aplicação de negócios eletrônicos voltado à consulta de autopeças, ao controle de estoque e ao registro de pedidos simulados. Este documento descreve a organização técnica do sistema e sua relação com o processo de compra representado na aplicação. O escopo compreende a execução local para fins acadêmicos; não inclui processamento financeiro, entrega de mercadorias ou operação comercial em ambiente público.
 
-O protótipo atende a um catálogo de autopeças com pesquisa, autenticação, inventário, pedidos simulados e uma área administrativa. O cliente em JavaScript usa uma API HTTP/JSON; não acessa o banco diretamente. A separação é **lógica entre cliente, servidor e banco**: o Express também serve os arquivos estáticos do cliente. O MongoDB local roda como serviço separado. A execução documentada é local, sem afirmação de hospedagem pública, múltiplos nós ou tolerância automática a falhas.
+## 2. Processo de negócios representado
 
-## 2. Por que Express
+A interação começa no catálogo público, no qual o cliente consulta peças e seus detalhes. O carrinho organiza os itens selecionados na interface, enquanto o registro do pedido exige autenticação. Ao receber a solicitação de checkout, o servidor consulta os produtos, verifica a disponibilidade de estoque, calcula os valores e grava o pedido. O cliente pode consultar o próprio histórico; usuários com perfil administrativo dispõem de rotas para gestão de produtos e pedidos.
 
-Express fornece composição de rotas e middlewares HTTP sem impor uma estrutura completa de aplicação. Neste projeto, `server/src/app.js` centraliza o roteamento e a serialização JSON, enquanto diretórios distintos guardam routes, controllers, models e middleware. Isso permite explicar cada responsabilidade de forma verificável e exercitar as rotas em testes. A escolha de Express não torna, por si só, a aplicação distribuída: a comunicação cliente/API por rede e a persistência em um serviço separado são os limites de componentes que podem ser observados aqui.
+O pedido registrado representa uma etapa de solicitação no protótipo, não uma venda concluída. O estado do pedido pode ser acompanhado nas funções administrativas, mas não há integração com meios de pagamento, faturamento ou serviços de transporte. Essa delimitação é necessária para interpretar corretamente o fluxo de negócios eletrônicos demonstrado.
 
-## 3. Componentes e percurso de uma requisição
+## 3. Organização técnica e framework
+
+A interface foi desenvolvida em HTML, CSS e JavaScript. O servidor utiliza Node.js com Express 5 para receber requisições HTTP, aplicar middlewares, encaminhar rotas e devolver respostas JSON. A persistência é realizada no MongoDB por meio do Mongoose. O Express também disponibiliza os arquivos estáticos da interface, de modo que a separação entre cliente e API é lógica, embora ambos sejam entregues pelo mesmo processo servidor.
 
 ```text
-Navegador (client/)
-    │ HTTP / JSON
-    ▼
-Express (server/index.js → server/src/app.js)
-    ├─ routes/ + middleware/auth.js
-    ├─ controllers/ (validação e regras de negócio)
-    └─ models/ + config/db.js ── Mongoose ──► MongoDB local
+Navegador: interface e carrinho
+        │ requisições HTTP
+        ▼
+Servidor Node.js / Express
+        ├── Rotas e middlewares: entrada e autorização
+        ├── Controllers: validação e operações da aplicação
+        └── Models / Mongoose: acesso a dados
+                         │
+                         ▼
+                     MongoDB local
 ```
 
-- `server/index.js` conecta ao MongoDB antes de aceitar requisições; o seed de demonstração só roda quando `SEED_DEMO_DATA=true`.
-- `server/src/app.js` monta `/api/auth`, `/api/orders`, `/api/admin`, `/api/catalogo`, rotas de peças e movimentações; entrega também `client/` e `docs/apresentacao.html` em `/apresentacao`.
-- `server/src/routes/catalogueRoutes.js` expõe lista e detalhe públicos; `orderRoutes.js` exige perfil cliente; `adminRoutes.js` exige perfil administrador.
-- `server/src/controllers/` processa requisições e responde JSON; `server/src/models/` define entidades persistidas por Mongoose.
-- `client/js/api.js` e `client/js/app.js` integram a interface às APIs. O carrinho pode residir no navegador durante o uso, mas preço e estoque são validados no servidor no checkout.
+O ponto de entrada `server/index.js` estabelece a conexão com o banco antes de iniciar o servidor HTTP. Em `server/src/app.js`, o Express configura o tratamento de JSON, as rotas da API e a entrega da interface. Os módulos em `server/src/routes/` definem os caminhos e associam as operações aos controllers; `server/src/models/` contém os modelos de dados. A interface consome a API por intermédio de `client/js/api.js` e `client/js/app.js`.
 
-## 4. Persistência, consistência e autorização
+Essa organização permite identificar as responsabilidades de apresentação, processamento e persistência. O nome do projeto não implica, por si, distribuição entre máquinas: a configuração documentada utiliza um servidor de aplicação e um serviço MongoDB em ambiente local, sem balanceamento ou tolerância automática a falhas.
 
-Os modelos atuais incluem usuários, peças, pedidos, movimentações, categorias e fornecedores. `server/src/controllers/OrdersController.js` busca as peças, registra snapshots de nome/código/preço no pedido, calcula o total do lado do servidor e atualiza o estoque com condição de disponibilidade dentro de `session.withTransaction`. O `compose.yaml` inicia MongoDB 7 com replica set **de membro único**, necessário para essa transação. Trata-se de atomicidade local; não há evidência de cluster replicado entre máquinas, failover automático ou consistência entre serviços remotos.
+## 4. Dados, pedido e controle de acesso
 
-`server/src/middleware/auth.js` controla o token e perfis nas rotas protegidas. O cliente não pode ler pedidos de terceiros pela rota de detalhe, que consulta o `customerId` autenticado. A área de administração é separada por perfil. Essas são propriedades do código atual, não uma declaração de auditoria de segurança para produção.
+Os dados incluem usuários, peças, categorias, fornecedores, movimentações e pedidos. No checkout, `server/src/controllers/OrdersController.js` recebe identificadores de peças e quantidades; preço e estoque são obtidos no servidor. O pedido conserva um registro dos dados das peças e do preço unitário no momento da operação. O cálculo do total, a criação do pedido e a redução do estoque são executados em uma transação MongoDB. A atualização de cada peça também exige estoque suficiente, impedindo que o valor informado pelo cliente seja tomado como fonte de preço ou disponibilidade.
 
-## 5. Demonstração e verificações
+O `compose.yaml` configura o MongoDB local como replica set de membro único para possibilitar transações. Isso oferece a condição técnica necessária ao fluxo transacional descrito, mas não caracteriza replicação entre servidores distintos nem alta disponibilidade.
 
-Reproduza o ambiente conforme o [README](../README.md): Node/npm, Docker Compose, MongoDB local e `.env` privado. No padrão documentado, use `http://127.0.0.1:3000` para interface e `/apresentacao` para slides. `GET /api/ping` mostra que o processo responde, mas não verifica a conexão ao banco. Para testes com persistência, inicie `mongodb-test` isolado em 27018 e rode os comandos do README; não reutilize dados da demo. A [avaliação de prontidão anterior](READINESS-ASSESSMENT-2026-09-16.md) registra resultados históricos e precisa de revalidação no dia da apresentação.
+As rotas de autenticação ficam em `/api/auth`; as de pedidos, em `/api/orders`; e as de administração, em `/api/admin`. O middleware de autorização verifica o token e o perfil nas rotas protegidas. A consulta ao detalhe de um pedido pelo cliente considera o identificador do usuário autenticado. Esses mecanismos descrevem controles implementados no protótipo, sem equivaler a uma avaliação completa de segurança para produção.
 
-Um roteiro didático possível: abrir a vitrine e buscar peças; autenticar o cliente; criar um pedido simulado e conferir seu histórico; abrir a administração e observar que um cliente não tem permissão para suas rotas. Nenhum desses passos representa pagamento, entrega ou disponibilidade pública.
+## 5. Demonstração e verificação
 
-## 6. Limites e evolução possível
+As instruções de instalação, configuração e testes constam no [README](../README.md). Na execução local padrão, a interface está disponível em `http://127.0.0.1:3000`, e os slides em `/apresentacao`. O endpoint `GET /api/ping` confirma a resposta do processo HTTP; ele não verifica a disponibilidade do banco de dados.
 
-- O repositório entrega um **protótipo local**, não infraestrutura distribuída de alta disponibilidade. Adicionar réplicas, balanceamento e monitoramento seria trabalho futuro, não recurso comprovado.
-- O MongoDB de membro único é usado para a demo e transações; não elimina um ponto único de falha.
-- A separação por API permite a construção de outros clientes no futuro, mas não há app móvel ou microsserviços implementados neste repositório.
-- A API, autenticação e apresentação devem ser testadas novamente antes da entrega ao professor; esta documentação não substitui uma execução real.
+Uma demonstração do fluxo pode apresentar a consulta ao catálogo, a autenticação, o registro de um pedido simulado, a consulta ao histórico e as operações administrativas. Os testes automatizados utilizam uma instância de MongoDB separada da demonstração. Os resultados de execuções anteriores não dispensam nova verificação no ambiente utilizado para a apresentação.
 
-## Referências internas
+## 6. Delimitações
 
-- [README e comandos de execução](../README.md)
-- [Relatório acadêmico do projeto](../RELATORIO_PROJETO.md)
-- [Plano e requisitos originais](../PDR.md)
-- [Slides da apresentação](apresentacao.html)
+O sistema demonstra funcionalidades de catálogo, estoque e pedidos no contexto da disciplina de Negócios Eletrônicos. Não são objeto desta implementação a confirmação de pagamento, a expedição, a entrega, a integração com fornecedores externos ou a implantação pública. Também não se afirma operação em múltiplos nós, disponibilidade contínua ou conformidade de segurança para uso comercial. A análise apresentada limita-se ao comportamento documentado no código e aos testes locais.
+
+## Documentos relacionados
+
+- [README: execução, configuração e testes](../README.md)
+- [Relatório do projeto](../RELATORIO_PROJETO.md)
+- [Apresentação HTML](apresentacao.html)

@@ -54,3 +54,6 @@ O sistema demonstra funcionalidades de catálogo, estoque e pedidos no contexto 
 - [README: execução, configuração e testes](../README.md)
 - [Relatório do projeto](../RELATORIO_PROJETO.md)
 - [Apresentação HTML](apresentacao.html)
+- [Apresentação PDF em português (offline)](apresentacao.pdf)
+- [Roteiro dos 12 slides em português e árabe](presentation-script.ar-pt.md)
+- [شرح المشروع بالعربية / Explicação em árabe](EXPLICACAO-AR.md)

@@ -1,117 +1,82 @@
-# AutoPart-SyncDistributed — نص العرض التقديمي (عربي + Português)
+# Roteiro da apresentação / نص الإلقاء — AutoPart-SyncDistributed
 
-> نص مقسم صفحة-بصفحة للعرض الأكاديمي المحلي. كل صفحة: النص العربي ثم نظيره البرتغالي.
-> يعكس هذا النص الحالة المُتحقق منها في 2026-09-16: 22 اختبارًا آليًا ناجحًا و0 فشل عبر المراحل 1–6، وتشغيل محلي على <http://localhost:5500>.
-> بصدق: لا توجد اختبارات Playwright E2E. توجد الآن لقطات شاشة محلية حقيقية للمتجر والإدارة والعرض HTML، لكنها ليست تغطية بصرية منفصلة لكل واحدة من البراهين الستة. التشغيل محلي لأغراض العرض الأكاديمي ولا يُزعم أنه متاح دائمًا.
+هذا نص مساعد للإلقاء حسب ترتيب الشرائح الاثنتي عشرة في [العرض البرتغالي](apresentacao.html)، وليس تقريرًا بديلًا. [الشرح التقني الكامل بالعربية](EXPLICACAO-AR.md) يوضح المعمارية والحدود. نسخة العرض الحالية افتراضيًا على `http://127.0.0.1:3000/apresentacao` بعد تشغيل الخادم؛ إذا غيّرت `PORT` فغيّر الرابط وفقًا له. النتائج العددية أدناه تعود لفحص مؤرخ في **16-09-2026**، لا لفحص لحظي.
 
----
+## 1. Abertura / البداية
 
-## الصفحة 1 — الشريحة الافتتاحية
+**Português:** O AutoPart-SyncDistributed é um protótipo acadêmico local de comércio eletrônico de autopeças. Ele separa a interface do navegador, a API e o serviço de banco de dados; não afirmamos implantação em vários servidores.
 
-**عربي:**
-دراسة حالة أكاديمية: AutoPart-SyncDistributed. من ورشة لإدارة المخزون إلى نموذج أولي محلي لمتجر إلكتروني لقطع غيار السيارات. تطبيق ويب بفصل كامل بين الواجهة والخادم وقاعدة البيانات، يعمل محليًا لأغراض العرض الأكاديمي على <http://localhost:5500> — بدون سحابة وبدون تكاليف خارجية.
+**عربي:** عرّف المشروع كنموذج أولي لمتجر قطع غيار. الفصل هنا بين مسؤوليات المتصفح والخادم وقاعدة محلية، وليس نشرًا على عدة عقد.
 
-**Português:**
-Estudo de caso acadêmico: AutoPart-SyncDistributed. Da gestão de estoque da oficina a um protótipo local de e-commerce de peças automotivas. Aplicação web com separação completa entre cliente, servidor e banco de dados, executada localmente para fins acadêmicos em <http://localhost:5500> — sem nuvem e sem custos externos.
+## 2. Problema e valor / المشكلة والقيمة
 
----
+**Português:** O controle manual de estoque dificulta a consulta e o acompanhamento. Propomos catálogo pesquisável, pedidos registrados e estoque controlado pelo servidor, dentro de um ambiente de demonstração.
 
-## الصفحة 2 — المشكلة والقيمة
+**عربي:** المشكلة هي صعوبة ضبط المخزون ومتابعة الطلبات يدويًا. القيمة التعليمية: كتالوج قابل للبحث وطلبات تحفظ مركزيًا.
 
-**عربي:**
-المشكلة: إدارة المخزون اليدوية بطيئة وعرضة للأخطاء وبدون سجل موثوق للطلبات. القيمة المقترحة: رقمنة الكتالوج والسلة والطلبات مع مخزون مركزي لدى الخادم كمصدر وحيد للحقيقة. ملفا الاستخدام: العميل النهائي والمشرف.
+## 3. Usuários e papéis / الأدوار
 
-**Português:**
-O problema: o controle manual de estoque é lento, propenso a erros e sem histórico confiável de pedidos. O valor proposto: digitalizar catálogo, carrinho e pedidos com estoque centralizado no servidor como fonte única de verdade. Dois perfis de uso: cliente final e administrador.
+**Português:** O cliente consulta peças e envia um pedido simulado; o administrador mantém produtos e acompanha pedidos. As contas genéricas só existem quando o seed local foi habilitado.
 
----
+**عربي:** دور العميل مختلف عن المشرف؛ حسابات العرض التجريبية اختيارية، وكلمة سرها تُضبط محليًا ولا توضع في الشرائح.
 
-## الصفحة 3 — المعمارية
+## 4. Arquitetura / المعمارية
 
-**عربي:**
-ثلاث طبقات، تطبيق واحد. الواجهة: Vanilla JavaScript (HTML/CSS/JS) تُقدَّم كموقع ثابت من الخادم نفسه. الخادم: Node.js مع Express وواجهة REST بـ JSON. قاعدة البيانات: MongoDB عبر Mongoose مع حفظ محلي. كل التواصل بين الواجهة والخادم يتم عبر API فقط.
+**Português:** O navegador em JavaScript consome a API Express por HTTP e JSON. O servidor valida as operações e usa Mongoose para persistir no MongoDB local. A interface e a API são entregues pelo mesmo processo Express; o banco é um serviço separado.
 
-**Português:**
-Três camadas, uma aplicação. Cliente: Vanilla JavaScript (HTML/CSS/JS), servido como site estático pelo próprio servidor. Servidor: Node.js com Express, API REST em JSON. Banco: MongoDB com Mongoose e persistência local. Toda a comunicação cliente-servidor acontece exclusivamente via API.
+**عربي:** اشرح الأسهم الثلاثة: متصفح ← API ← MongoDB. لا تقل إن النظام موزع على خوادم كثيرة؛ replica set المحلي بعضو واحد يدعم المعاملات، لا التوافر العالي.
 
----
+## 5. Vitrine / الكتالوج
 
-## الصفحة 4 — الأمان
+**Português:** O catálogo público permite consulta, busca e filtros por características das peças, com preço e disponibilidade apresentados ao cliente.
 
-**عربي:**
-تسجيل ودخول مع تحقق من طرف الخادم. كلمات السر محفوظة بتجزئة bcrypt ولا تُخزن نصًا صريحًا أبدًا. جلسات JWT موقّعة، وJWT_SECRET يأتي من الإعداد الخاص ولا يُنشر أبدًا. منطقة الإدارة محمية بصلاحية الملف الشخصي (admin) على مستوى الـAPI، وقد تحقق محليًا أن العميل يتلقى 403 عند محاولة الوصول إلى واجهة الإدارة.
+**عربي:** اعرض البحث والفلاتر إن كان التشغيل المحلي جاهزًا؛ هذه شاشة استكشاف قبل الدخول.
 
-**Português:**
-Registro e login com validação no servidor. Senhas protegidas com hash bcrypt — nunca armazenadas em texto puro. Sessões JWT assinadas; o `JWT_SECRET` vem da configuração privada e nunca é publicado. Área administrativa protegida por perfil (admin) no nível da API; verificado localmente que o cliente recebe 403 ao tentar acessar endpoint administrativo.
+## 6. Carrinho e pedidos / السلة والطلب
 
----
+**Português:** O carrinho fica no navegador, mas o checkout autenticado recalcula valores e verifica estoque no servidor. O pedido é registrado no MongoDB; não há pagamento real.
 
-## الصفحة 5 — المتجر
+**عربي:** شدد على أن سعر المتصفح غير موثوق وأن الخادم يعيد التحقق، وأن كلمة checkout هنا تعني **طلبًا تجريبيًا** لا بيعًا مدفوعًا.
 
-**عربي:**
-واجهة متجر عامة تعرض المميزة والأقسام. بطاقة القطعة تعرض التوافق والسعر والمخزون. بحث بالاسم والماركة والموديل، مع فلترة حسب القسم والتوفر.
+## 7. Administração / الإدارة
 
-**Português:**
-Vitrine pública com destaques e categorias. A ficha da peça mostra compatibilidade, preço e estoque. Busca por nome, marca e modelo, com filtros por categoria e disponibilidade.
+**Português:** O administrador gerencia peças, preços, estoque e estados de pedidos por rotas protegidas no servidor, não apenas por um menu oculto na interface.
 
----
+**عربي:** اختلاف الواجهات ليس حماية كافية؛ صلاحية المشرف تُتحقق في الـAPI.
 
-## الصفحة 6 — البيع
+## 8. Segurança / الأمان
 
-**عربي:**
-سلة مشتريات محفوظة في المتصفح. الكميات والمجاميع تُحسب لحظيًا. إتمام الطلب (محاكاة) ينشئ طلبًا محفوظًا فعليًا في قاعدة البيانات، مع سجل طلبات لكل عميل وحالة كل طلب — لا يوجد دفع حقيقي.
+**Português:** As senhas usam hash bcryptjs; tokens JWT são assinados com segredo configurado privadamente. Uma verificação local registrada mostrou que o cliente recebe 403 ao tentar acessar uma rota administrativa. Isso não equivale a uma auditoria completa de segurança.
 
-**Português:**
-Carrinho persistente no navegador. Quantidades e totais calculados em tempo real. O checkout simulado cria pedidos persistentes de verdade no banco, com histórico de pedidos por cliente e status de cada pedido — sem pagamento real.
+**عربي:** لا تعرض `JWT_SECRET`. حالة 403 دليل محدود على رفض الوصول في الفحص المذكور، وليست شهادة جاهزية للإنتاج.
 
----
+## 9. Evidências / الأدلة
 
-## الصفحة 7 — الإدارة
+**Português:** No registro de 16 de setembro de 2026, 22 testes automatizados passaram sem falhas. Também foram registrados testes locais de respostas 200 e 403. Esses resultados são datados e devem ser conferidos novamente antes da demonstração.
 
-**عربي:**
-إدارة القطع من واجهة إدارية محمية: إنشاء وتعديل السعر والمخزون، وإدارة الطلبات وحالاتها. كل ذلك خلف صلاحية admin على مستوى الـAPI، لا في الواجهة فقط.
+**عربي:** اربط الأرقام بتاريخ [مراجعة الجاهزية](READINESS-ASSESSMENT-2026-09-16.md)؛ لا تقدّمها كفحص حدث اليوم تلقائيًا.
 
-**Português:**
-Gestão de peças pela interface administrativa protegida: criação e edição de preço e estoque, e gestão de pedidos e seus status. Tudo protegido pela autorização admin no nível da API — não apenas na interface.
+## 10. Limitações / الحدود
 
----
+**Português:** Não há pagamento, entrega, operação pública ou garantia de disponibilidade. Capturas locais mostram algumas telas, mas não substituem uma suíte Playwright de ponta a ponta nem a validação de produção.
 
-## الصفحة 8 — الجودة (نتائج مُتحقق منها)
+**عربي:** الصراحة مهمة: المشروع تعليمي ومحلي، ولا توجد اختبارات Playwright E2E موثقة.
 
-**عربي:**
-تحقق في 2026-09-16: 22 اختبارًا آليًا ناجحًا و0 فشل عبر المراحل 1–6. فحوص تشغيل محلية: الرئيسية والكتالوج 200، دخول المدير والعميل بنجاح، طلبات العميل 200، منتجات وطلبات الإدارة 200، والعميل يتلقى 403 على واجهة الإدارة. توجد لقطات شاشة محلية حقيقية للمتجر والإدارة والعرض HTML، ولا توجد اختبارات Playwright E2E.
+## 11. Demonstração local / العرض العملي
 
-**Português:**
-Verificação de 2026-09-16: 22 testes automatizados aprovados e 0 falhas nas Fases 1–6. Checagens locais de execução: home e catálogo 200, login de admin e cliente, pedidos do cliente 200, produtos e pedidos do admin 200, e o cliente recebe 403 no endpoint administrativo. Há screenshots locais reais da vitrine, da administração e do deck HTML; não há suíte Playwright E2E.
+**Português:** Antes da apresentação, inicio o MongoDB e o servidor com configuração privada. Abro `http://127.0.0.1:3000` ou a porta definida em `PORT`, verifico catálogo, login das contas demo se habilitadas, pedido, administração e recusa 403 para um cliente.
 
----
+**عربي:** حضّر `.env` محليًا ولا تعرض محتواه؛ تأكد من المنفذ الفعلي، وتدرّب على تسلسل العرض قبل القاعة. لا تجرِ اختبارات قد تحذف قاعدة بيانات العرض.
 
-## الصفحة 9 — الحدود والخطوات التالية
+## 12. Conclusão / الختام
 
-**عربي:**
-الحدود بصدق: الدفع محاكاة فقط، التشغيل محلي أكاديمي، ولا يوجد نشر عام أو اتفاقية مستوى خدمة. الخطوات التالية المحتملة (غير منفذة كادعاء): النشر على GitHub كمعرض أعمال، تقارير المبيعات، وتحسينات التشغيل المحلي.
+**Português:** Este protótipo documenta um fluxo de pedido com responsabilidades separadas e autorização no servidor, dentro de limites acadêmicos explícitos. O repositório contém código, instruções de execução, relatório e apresentação. Obrigado; fico à disposição para perguntas.
 
-**Português:**
-Limites honestos: checkout simulado, execução local acadêmica, sem publicação pública e sem SLA. Próximos passos possíveis (não afirmados como prontos): publicação no GitHub como portfólio, relatórios de vendas e melhorias de operação local.
+**عربي:** اختم بما أُنجز فعلًا وحدوده، ثم افتح باب الأسئلة.
 
----
+## Perguntas frequentes / أسئلة متوقعة
 
-## الصفحة 10 — المستودع والعرض المحلي
-
-**عربي:**
-المستودع على GitHub مع README يتضمن خطوات تشغيل محلية مُتحقق منها وحسابي عرض تجريبي موثقين. قبل العرض: تشغيل الحزمة محليًا والتحقق من <http://localhost:5500> — لا نزعم أن الخدمة تعمل دائمًا أو أنها متاحة على الإنترنت.
-
-**Português:**
-Repositório no GitHub com README de execução local verificada e contas de demonstração acadêmica documentadas. Antes da apresentação: subir o ambiente local e validar <http://localhost:5500> — não afirmamos que o runtime está permanentemente online ou disponível na internet.
-
----
-
-## ملاحظات الإلقاء (لك ممدوح، ليست في العرض)
-
-- 10 páginas ≈ 8-10 دقائق.
-- الصفحتان 8-9 هما الأقوى أمام الزملاء والأستاذ: أرقام مُتحقق منها بتاريخ، وحدود صادقة تُظهر نضجًا هندسيًا.
-- قبل العرض مباشرة (تسلسل تحقق، وليس خدمة دائمة): شغّل MongoDB ثم الخادم، وافتح <http://localhost:5500> بحساب admin ثم cliente، وتأكد من: الكتالوج يفتح (200)، طلب تجريبي للعميل، منتجات وطلبات الـadmin، وأن العميل يأخذ 403 على واجهة الإدارة.
-- لو سألوا عن "لماذا بدون React؟": Vanilla JS كان قرارًا تعليميًا لإظهار فهم DOM وfetch مباشرة قبل الأطر.
-- لو سألوا عن الأمان: bcrypt للتجزئة + JWT للجلسات + فصل صلاحيات admin/cliente على مستوى الـAPI (دليل: 403 للعميل).
-- لو سألوا عن النشر أو اللقطات: بصراحة، توجد screenshots محلية حقيقية للمتجر والإدارة والعرض HTML، لكن لا توجد Playwright E2E ولا تغطية بصرية منفصلة لكل البراهين الستة، ولا نشر عام — والـcheckout محاكاة فقط.
-- كلمات السر المعروضة هي كلمة العرض الأكاديمية العامة `<SENHA_DEMO_LOCAL>` للحسابين `admin.demo@autopart.test` و`cliente.demo@autopart.test` — ولا تُعرض أبدًا قيمة `JWT_SECRET` الخاصة.
+- **Por que Express? / لماذا Express؟** لتنظيم HTTP وREST والـmiddleware في التطبيق الحالي، لا لأننا بنينا framework جديدًا.
+- **Onde está a distribuição? / أين التوزيع؟** فصل مسؤوليات عميل وخادم وقاعدة محلية؛ لا يوجد عدة خوادم أو تحمل أعطال موزع.
+- **Por que sem React? / لماذا لا React؟** استخدام Vanilla JS في هذا النموذج يسمح بإظهار DOM و`fetch` مباشرة؛ ليس تقييمًا ضد React.
+- **É uma venda real? / هل هو بيع حقيقي؟** لا؛ إنشاء طلب وتحديث مخزون ضمن محاكاة، بلا دفع أو تسليم.

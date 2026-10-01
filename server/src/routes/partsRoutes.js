@@ -5,8 +5,8 @@ const MovementController = require('../controllers/MovementController');
 const { authMiddleware, permissionMiddleware } = require('../middleware/auth');
 
 // Movements Routes (Must come BEFORE /:id)
-router.get('/history', authMiddleware, MovementController.getHistory);
-router.get('/history/:peca_id', authMiddleware, MovementController.getHistory);
+router.get('/history', authMiddleware, permissionMiddleware(['admin', 'operador', 'consulta']), MovementController.getHistory);
+router.get('/history/:peca_id', authMiddleware, permissionMiddleware(['admin', 'operador', 'consulta']), MovementController.getHistory);
 router.post('/entrada', authMiddleware, permissionMiddleware(['admin', 'operador']), MovementController.recordEntry);
 router.post('/saida', authMiddleware, permissionMiddleware(['admin', 'operador']), MovementController.recordExit);
 

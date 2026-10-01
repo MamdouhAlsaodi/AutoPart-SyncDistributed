@@ -1,11 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <circle cx="32" cy="32" r="30" fill="url(#grad)" />
-  <path d="M32 12 L44 24 L38 24 L38 40 L26 40 L26 24 L20 24 Z" fill="white" opacity="0.9" />
-  <circle cx="32" cy="48" r="4" fill="#10b981" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">AutoPart — engrenagem e peça</title>
+  <desc id="desc">Engrenagem de cobre com um A geométrico no centro.</desc>
+  <rect width="64" height="64" rx="14" fill="#172630"/>
+  <g fill="#e6a35e">
+    <rect x="28" y="4" width="8" height="13" rx="2"/>
+    <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(45 32 32)"/>
+    <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(90 32 32)"/>
+    <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(135 32 32)"/>
+    <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(180 32 32)"/>
+    <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(225 32 32)"/>
+    <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(270 32 32)"/>
+    <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(315 32 32)"/>
+  </g>
+  <circle cx="32" cy="32" r="20" fill="#172630" stroke="#e6a35e" stroke-width="4"/>
+  <path d="M32 21 43 27v10L32 43 21 37V27Z" fill="#e6a35e"/>
+  <path d="m26 37 6-11 6 11m-9-4h6" fill="none" stroke="#172630" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

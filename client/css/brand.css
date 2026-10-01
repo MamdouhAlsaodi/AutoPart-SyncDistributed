@@ -1,0 +1,47 @@
+/* AutoPart identity: workshop graphite, copper hardware and diagnostic teal. */
+:root{
+  --paper:#eef2ef;
+  --surface:#fffefa;
+  --graphite:#172630;
+  --graphite-2:#263d49;
+  --orange:#bb4f1a;
+  --orange-dark:#893710;
+  --orange-soft:#e6a35e;
+  --steel:#516876;
+  --line:#cbd5d3;
+  --green:#176341;
+  --red:#9b352c;
+  --shadow:0 12px 30px rgba(23,38,48,.10);
+}
+body{color:var(--graphite)}
+.store-header{border-bottom-color:var(--orange);box-shadow:0 6px 22px rgba(23,38,48,.14)}
+.store-header .site-brand{display:inline-flex;align-items:center;gap:.7rem;padding:0;color:#fff;text-decoration:none;min-width:max-content}
+.store-header .site-brand:hover{background:transparent;color:#fff}
+.site-brand img{width:42px;height:42px;flex:none}
+.site-brand span{display:grid;gap:0;line-height:1.08}
+.site-brand strong{font-size:1.25rem;letter-spacing:.015em}
+.site-brand small{font-size:.66rem;color:#e6a35e;font-weight:750;letter-spacing:.1em;text-transform:uppercase;margin-top:.28rem}
+.brand-lockup .brand-mark{display:block;width:42px;height:42px;flex:none;background:none}
+.hero{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(115deg,#172630 0%,#203846 58%,#294b52 100%);border-left-color:var(--orange);min-height:315px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.hero::after{content:"";position:absolute;z-index:-1;right:clamp(-4rem,4vw,5rem);top:50%;width:clamp(210px,29vw,390px);aspect-ratio:1;transform:translateY(-50%) rotate(-12deg);background:url('/brand-gear.svg') center/contain no-repeat;opacity:.38;pointer-events:none}
+.hero h1{max-width:690px;text-wrap:balance}
+.hero p{max-width:600px;color:#e3ebec}
+.hero-kicker{color:#e6a35e;letter-spacing:.15em;text-transform:uppercase;font-weight:800;font-size:.76rem}
+.hero .hero-cta{display:inline-flex;align-items:center;gap:.8rem;margin-top:.7rem;background:var(--orange);color:#fff;text-decoration:none;border-radius:3px;padding:.75rem 1.1rem;font-weight:800;min-height:44px;box-shadow:0 5px 0 #843817}
+.hero .hero-cta:hover{background:var(--orange-dark);color:#fff}
+.hero .hero-cta:focus-visible,.site-brand:focus-visible{outline:3px solid #e6a35e;outline-offset:3px}
+.featured-section,.catalogue-section,.auth-surface,.cart-page,.orders-page{border-top:3px solid var(--orange)}
+.product-card,.featured-card{transition:transform .2s ease,box-shadow .2s ease}
+.product-card:hover,.featured-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.auth-brand{display:flex;align-items:center;gap:.65rem}
+.auth-brand img{width:46px;height:46px}
+.auth-brand span{letter-spacing:.01em}
+@media(max-width:760px){
+  .site-brand img{width:36px;height:36px}
+  .site-brand strong{font-size:1.1rem}
+  .site-brand small{font-size:.58rem}
+  .hero{min-height:300px;padding:2rem 1.5rem}
+  .hero::after{right:-6rem;opacity:.19}
+  .hero h1{font-size:clamp(2rem,9vw,3rem)}
+}
+@media(prefers-reduced-motion:reduce){.product-card,.featured-card{transition:none}}

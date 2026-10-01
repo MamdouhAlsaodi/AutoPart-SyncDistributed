@@ -1,0 +1,70 @@
+<svg viewBox="0 0 1160 360" role="img" aria-labelledby="hero-arch-title hero-arch-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="hero-arch-title">Diagrama de Arquitetura de Software — AutoPart-SyncDistributed</title>
+  <desc id="hero-arch-desc">Três camadas de um protótipo acadêmico local: navegador HTML CSS JavaScript com catálogo, gestão e carrinho em localStorage; API Node.js Express com rotas REST, JWT, perfis e validação transacional de pedidos e estoque; MongoDB local de membro único via Mongoose, com peças, usuários, pedidos e movimentações. Setas indicam HTTP JSON, acesso por Mongoose e dependências internas, não servidores distribuídos.</desc>
+  <defs>
+    <pattern id="hero-grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#24354b" stroke-width=".6"/></pattern>
+    <marker id="hero-tip" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M1 1 8 4.5 1 8" fill="none" stroke="#e6a35e" stroke-width="1.7"/></marker>
+  </defs>
+  <rect class="hero-backdrop" x="0" y="0" width="1160" height="360" rx="12" fill="#101e31"/>
+  <rect x="0" y="0" width="1160" height="360" rx="12" fill="url(#hero-grid)" opacity=".65"/>
+  <!-- Connections are below the cards, so they never cross their labels. -->
+  <g fill="none" stroke="#e6a35e" stroke-width="2.4" stroke-linecap="round" marker-end="url(#hero-tip)">
+    <path d="M361 127H402"/><path d="M755 127H796"/>
+    <path d="M186 216V247"/><path d="M580 216V247"/><path d="M974 216V247"/>
+  </g>
+  <g class="hero-link-label" fill="#e6a35e" font-size="12" font-family="system-ui,sans-serif" font-weight="700" text-anchor="middle"><text x="382" y="102">JSON</text><text x="776" y="102">ODM</text></g>
+  <!-- Frontend -->
+  <g>
+    <rect class="hero-node" x="14" y="19" width="344" height="197" rx="13" fill="#172a42" stroke="#4ac4d7" stroke-width="1.7"/>
+    <rect x="29" y="35" width="70" height="92" rx="10" fill="#0b3244" stroke="#4ac4d7" stroke-width="1.2"/>
+    <g fill="none" stroke="#4ac4d7" stroke-width="2.2" stroke-linejoin="round"><rect x="40" y="49" width="49" height="48" rx="4"/><path d="M40 62h49M48 72h15M48 81h30M54 103h22"/></g>
+    <circle cx="45" cy="56" r="2" fill="#4ac4d7"/><circle cx="52" cy="56" r="2" fill="#4ac4d7"/>
+    <text class="hero-layer" x="115" y="55" fill="#4ac4d7" font-size="12" font-weight="800" letter-spacing="1.3" font-family="system-ui,sans-serif">01 · FRONTEND</text>
+    <text class="hero-title" x="115" y="88" fill="#ece6d3" font-size="23" font-weight="750" font-family="system-ui,sans-serif">Navegador</text>
+    <text class="hero-detail" x="115" y="115" fill="#c9d4df" font-size="15" font-family="system-ui,sans-serif">HTML · CSS · Vanilla JS</text>
+    <path d="M29 140H341" stroke="#496477" stroke-width="1"/>
+    <circle cx="36" cy="160" r="3.5" fill="#4ac4d7"/><text class="hero-detail" x="47" y="165" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Catálogo e área de gestão</text>
+    <circle cx="36" cy="188" r="3.5" fill="#4ac4d7"/><text class="hero-detail" x="47" y="193" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">fetch → API /api</text>
+  </g>
+  <!-- Backend -->
+  <g>
+    <rect class="hero-node" x="408" y="19" width="344" height="197" rx="13" fill="#172a42" stroke="#e6a35e" stroke-width="1.7"/>
+    <rect x="423" y="35" width="70" height="92" rx="10" fill="#3e2c1e" stroke="#e6a35e" stroke-width="1.2"/>
+    <g fill="none" stroke="#e6a35e" stroke-width="2.2" stroke-linecap="round"><rect x="437" y="51" width="42" height="16" rx="3"/><rect x="437" y="77" width="42" height="16" rx="3"/><path d="M446 106h24"/></g>
+    <circle cx="443" cy="59" r="2" fill="#e6a35e"/><circle cx="443" cy="85" r="2" fill="#e6a35e"/>
+    <text class="hero-layer" x="509" y="55" fill="#e6a35e" font-size="12" font-weight="800" letter-spacing="1.3" font-family="system-ui,sans-serif">02 · BACKEND</text>
+    <text class="hero-title" x="509" y="88" fill="#ece6d3" font-size="23" font-weight="750" font-family="system-ui,sans-serif">API Express</text>
+    <text class="hero-detail" x="509" y="115" fill="#c9d4df" font-size="15" font-family="system-ui,sans-serif">Node.js · rotas REST</text>
+    <path d="M423 140H735" stroke="#496477" stroke-width="1"/>
+    <circle cx="430" cy="160" r="3.5" fill="#e6a35e"/><text class="hero-detail" x="441" y="165" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Preço, pedido e estoque</text>
+    <circle cx="430" cy="188" r="3.5" fill="#e6a35e"/><text class="hero-detail" x="441" y="193" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Autorização por perfil</text>
+  </g>
+  <!-- Persistence -->
+  <g>
+    <rect class="hero-node" x="802" y="19" width="344" height="197" rx="13" fill="#172a42" stroke="#a78bfa" stroke-width="1.7"/>
+    <rect x="817" y="35" width="70" height="92" rx="10" fill="#30274b" stroke="#a78bfa" stroke-width="1.2"/>
+    <g fill="none" stroke="#a78bfa" stroke-width="2.3"><ellipse cx="852" cy="58" rx="23" ry="9"/><path d="M829 58v42c0 12 46 12 46 0V58M829 79c0 12 46 12 46 0"/></g>
+    <text class="hero-layer" x="903" y="55" fill="#a78bfa" font-size="12" font-weight="800" letter-spacing="1.3" font-family="system-ui,sans-serif">03 · DADOS</text>
+    <text class="hero-title" x="903" y="88" fill="#ece6d3" font-size="23" font-weight="750" font-family="system-ui,sans-serif">MongoDB</text>
+    <text class="hero-detail" x="903" y="115" fill="#c9d4df" font-size="15" font-family="system-ui,sans-serif">Mongoose · loopback</text>
+    <path d="M817 140H1129" stroke="#496477" stroke-width="1"/>
+    <circle cx="824" cy="160" r="3.5" fill="#a78bfa"/><text class="hero-detail" x="835" y="165" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Peças, pedidos e usuários</text>
+    <circle cx="824" cy="188" r="3.5" fill="#a78bfa"/><text class="hero-detail" x="835" y="193" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Movimentações de estoque</text>
+  </g>
+  <!-- Dependent mechanisms, not separate machines -->
+  <g>
+    <rect class="hero-node" x="14" y="253" width="344" height="69" rx="10" fill="#18334a" stroke="#4ac4d7" stroke-width="1.2"/>
+    <g fill="none" stroke="#4ac4d7" stroke-width="2"><path d="M32 275h22l-3 19H36zM37 275l-2-7M50 275l2-7"/><circle cx="39" cy="300" r="2"/><circle cx="50" cy="300" r="2"/></g>
+    <text class="hero-title" x="72" y="279" fill="#ece6d3" font-size="17" font-weight="700" font-family="system-ui,sans-serif">Carrinho local</text>
+    <text class="hero-detail" x="72" y="302" fill="#c9d4df" font-size="13" font-family="system-ui,sans-serif">localStorage · checkout simulado</text>
+    <rect class="hero-node" x="408" y="253" width="344" height="69" rx="10" fill="#3b2a25" stroke="#e6a35e" stroke-width="1.2"/>
+    <g fill="none" stroke="#e6a35e" stroke-width="2.2"><path d="M439 264l17 6v13c0 11-8 18-17 22-9-4-17-11-17-22v-13z"/><path d="m431 283 6 6 11-13"/></g>
+    <text class="hero-title" x="466" y="279" fill="#ece6d3" font-size="17" font-weight="700" font-family="system-ui,sans-serif">Segurança e regras</text>
+    <text class="hero-detail" x="466" y="302" fill="#c9d4df" font-size="13" font-family="system-ui,sans-serif">JWT · bcryptjs · transações</text>
+    <rect class="hero-node" x="802" y="253" width="344" height="69" rx="10" fill="#302a4a" stroke="#a78bfa" stroke-width="1.2"/>
+    <g fill="none" stroke="#a78bfa" stroke-width="2.2"><path d="M827 266h27v34h-27zM833 275h15M833 282h15M833 289h11"/></g>
+    <text class="hero-title" x="866" y="279" fill="#ece6d3" font-size="17" font-weight="700" font-family="system-ui,sans-serif">Persistência local</text>
+    <text class="hero-detail" x="866" y="302" fill="#c9d4df" font-size="13" font-family="system-ui,sans-serif">Replica set rs0 · membro único</text>
+  </g>
+  <text class="hero-detail" x="580" y="346" fill="#aab8c8" font-size="12" text-anchor="middle" font-family="system-ui,sans-serif">Aplicação acadêmica local · Não representa múltiplos servidores ou alta disponibilidade</text>
+</svg>

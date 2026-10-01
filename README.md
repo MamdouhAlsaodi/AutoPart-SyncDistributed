@@ -11,8 +11,13 @@ O fluxo de pedidos representa uma solicitação no ambiente de demonstração, s
 - `server/src/routes/`, `controllers/`, `models/`, `middleware/`: API, regras de acesso e persistência.
 - `client/`: interface consumidora da API; `docs/apresentacao.html`: slides da demonstração.
 - [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md): análise da estrutura da aplicação e do fluxo de pedidos para a disciplina.
+- [`docs/DEMO-DATA.md`](docs/DEMO-DATA.md): carga grande, contas fictícias e serviços locais da máquina de apresentação.
 
 O navegador acessa a API por requisições HTTP, enquanto o processo Express disponibiliza também os arquivos estáticos da interface. O MongoDB opera como serviço local separado. O `compose.yaml` configura um replica set de membro único para as transações do pedido; a aplicação não dispõe de alta disponibilidade.
+
+## Identidade visual
+
+A marca AutoPart usa uma engrenagem com peça hexagonal e a letra A: [`client/favicon.svg`](client/favicon.svg) é o símbolo do app, e o logotipo horizontal está em [`client/logo-autopart.svg`](client/logo-autopart.svg) e [`client/logo-autopart.png`](client/logo-autopart.png). O catálogo, a área administrativa e os slides compartilham grafite, cobre e teal; [`DESIGN.md`](DESIGN.md) e [`tokens.json`](tokens.json) documentam os tokens e contrastes. A apresentação em `/apresentacao` tem a marca no cabeçalho e na primeira página do PDF.
 
 ## Requisitos
 
@@ -50,7 +55,7 @@ Quando habilitado, o seed usa as contas `admin.demo@autopart.test` e `cliente.de
 - Catálogo público: `GET /api/catalogo`, `GET /api/catalogo/:id`.
 - Cadastro, login e sessão: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`.
 - Cliente autenticado: `POST /api/orders/checkout`, `GET /api/orders/me`, `GET /api/orders/:id`.
-- Administrador autenticado: `/api/admin/products` e `/api/admin/orders` (listagem, detalhe e operações implementadas nas rotas).
+- Administrador autenticado: `/api/admin/products` e `/api/admin/orders` (listagem, detalhe e operações implementadas nas rotas). A interface de gestão inclui **Movimentações** (histórico, entrada e saída) e **Relatórios** (estoque, últimas 100 movimentações e pedidos simulados do administrador); consulte [`docs/DEMO-DATA.md`](docs/DEMO-DATA.md) para os limites dos dados históricos.
 - Verificação básica do processo: `GET /api/ping`. A resposta informa `db: MongoDB`, **mas não testa a saúde da conexão**.
 
 O checkout recalcula preços no servidor, cria o pedido e reduz o estoque dentro de uma transação MongoDB; requer replica set. A interface e a API não substituem regras de pagamento real.
@@ -74,4 +79,4 @@ Os testes de banco usam `127.0.0.1:27018/autopart_fase1_test` com `NODE_ENV=test
 
 ## Documentação acadêmica
 
-A [análise da estrutura e do fluxo de pedidos](docs/FRAMEWORK.md) apresenta a aplicação no contexto da disciplina de Negócios Eletrônicos. O [relatório do projeto](RELATORIO_PROJETO.md) registra o escopo e as evidências da implementação; a [apresentação HTML](docs/apresentacao.html) pode ser aberta em `/apresentacao` durante a execução local. Há também um [roteiro de apresentação](docs/presentation-script.ar-pt.md). Nenhum desses materiais constitui evidência de implantação pública ou operação comercial.
+A [análise da estrutura e do fluxo de pedidos](docs/FRAMEWORK.md) apresenta a aplicação no contexto da disciplina de Negócios Eletrônicos. O [relatório do projeto](RELATORIO_PROJETO.md) registra o escopo e as evidências da implementação. A apresentação em português está disponível como [slides HTML interativos](docs/apresentacao.html), abertos em `/apresentacao` durante a execução local, e como [PDF para apresentar sem servidor](docs/apresentacao.pdf). Há um [roteiro de fala em português e árabe](docs/presentation-script.ar-pt.md) correspondente aos 12 slides e uma [explicação do projeto em árabe](docs/EXPLICACAO-AR.md). Nenhum desses materiais constitui evidência de implantação pública ou operação comercial.

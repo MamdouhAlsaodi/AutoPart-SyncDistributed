@@ -7,20 +7,20 @@
 <title>AutoPart-SyncDistributed — Apresentação acadêmica (protótipo local)</title>
 <style>
   :root{
-    --navy-0:#0a1120;
-    --navy-1:#0f1729;
-    --navy-2:#17233c;
-    --graphite:#232d44;
-    --copper:#c98a3d;
-    --copper-soft:#e2ac66;
-    --copper-deep:#7c5522;
-    --paper:#ece6d3;
-    --paper-dim:#c9c1ab;
-    --paper-faint:#8f8874;
-    --cyan:#46c8da;
-    --cyan-deep:#0f7f92;
-    --line:rgba(201,138,61,.30);
-    --line-soft:rgba(236,230,211,.12);
+    --navy-0:#0e1b28;
+    --navy-1:#142331;
+    --navy-2:#1d3444;
+    --graphite:#172630;
+    --copper:#d9682e;
+    --copper-soft:#e6a35e;
+    --copper-deep:#893710;
+    --paper:#f1f3ee;
+    --paper-dim:#cbd8dc;
+    --paper-faint:#a4b8c0;
+    --cyan:#4ac4d7;
+    --cyan-deep:#126f7b;
+    --line:rgba(230,163,94,.38);
+    --line-soft:rgba(241,243,238,.15);
     --card:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012));
     --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
   }
@@ -51,7 +51,7 @@
   .chrome > *{pointer-events:auto}
   .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:clamp(.8rem,1.6vw,.95rem);letter-spacing:.02em;white-space:nowrap}
   .brand .muted{color:var(--paper-faint);font-weight:500}
-  .brand-mark{width:20px;height:20px;flex:none}
+  .brand-mark{width:28px;height:28px;flex:none}
   .tools{display:flex;align-items:center;gap:clamp(6px,1vw,14px);flex-wrap:wrap;justify-content:flex-end}
   .counter{font-variant-numeric:tabular-nums;color:var(--paper-dim);font-size:.9rem;min-width:4.2ch;text-align:center}
   .btn{
@@ -145,6 +145,29 @@
     color:var(--copper-soft);font-weight:600;font-size:.92rem;
     border:1px dashed var(--copper);border-radius:10px;padding:8px 14px;
     background:rgba(201,138,61,.07);
+  }
+
+  /* Architecture on the opening slide: compact enough for a projector. */
+  .slide--opening{padding-top:50px;padding-bottom:44px}
+  .cover-brand{display:flex;align-items:center;gap:.65rem;margin-bottom:8px;color:var(--copper-soft);font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+  .cover-brand svg{width:34px;height:34px;flex:none}
+  .slide--opening .slide-inner{width:min(1080px,100%)}
+  .slide--opening h1{font-size:clamp(1.8rem,3.2vw,2.35rem);margin-bottom:6px}
+  .slide--opening .lede{max-width:80ch;margin-bottom:10px;font-size:clamp(.9rem,1.45vw,1rem)}
+  .hero-architecture{margin:0;background:rgba(23,35,60,.52);border:1px solid var(--line);border-radius:16px;padding:10px 14px 8px}
+  .hero-architecture figcaption{font-size:.76rem;font-weight:750;letter-spacing:.08em;color:var(--copper-soft);text-transform:uppercase}
+  .hero-architecture svg{display:block;width:min(100%,930px);height:auto;margin:2px auto}
+  .hero-architecture .arch-mobile{display:none}
+  .hero-architecture .hero-caption{margin:2px 0 0;color:var(--paper-dim);font-size:.78rem}
+  @media (min-height:680px) and (min-width:900px){.hero-architecture svg{width:100%}}
+  @media (max-width:640px){
+    .slide--opening{padding-top:152px;padding-bottom:92px}
+    .hero-architecture svg{display:none}
+    .hero-architecture .arch-mobile{display:grid;gap:5px;margin:10px 0}
+    .arch-mobile div{padding:9px 12px;border:1px solid var(--line);background:var(--navy-2);border-radius:8px;display:grid;gap:2px}
+    .arch-mobile strong{color:var(--paper);font-size:.92rem}
+    .arch-mobile span{color:var(--paper-dim);font-size:.8rem}
+    .arch-mobile b{text-align:center;color:var(--copper-soft);font-size:.82rem}
   }
 
   /* Architecture diagram */
@@ -252,6 +275,7 @@
     .btn{flex:1 1 auto;min-height:38px;padding:8px 12px;font-size:.82rem;text-align:center}
     .tools nav .btn{flex:1 1 0}
     .slide{padding:152px 18px 120px}
+    .slide.slide--opening{padding-top:152px;padding-bottom:92px}
     .brand .muted{display:none}
     .arch{flex-direction:column}
     .arch-arrow{flex-direction:row;min-height:34px}
@@ -273,7 +297,7 @@
   @media print{
     @page{size:13in 7.5in;margin:0}
     html,body{background:#fff !important;color:#182035;overflow:visible}
-    .chrome,.progress,.schematic,.pnotes{display:none !important}
+    .chrome,.progress,.schematic,.pnotes,.notes{display:none !important}
     .deck{height:auto;overflow:visible}
     .slide{
       position:static;opacity:1 !important;visibility:visible !important;transform:none !important;
@@ -281,9 +305,20 @@
       display:flex;align-items:flex-start;
     }
     h1,h2{color:#182035}
-    .kicker,h3{color:#8a5a24}
+    .kicker,h3,.cover-brand{color:#8a4b16}
     .lede,.card p,ul.list li,.steps li,.checks li,.caption,.foot-note,.stat-cap,.arch-box ul{color:#3a4358}
     .card,.arch-box{background:#faf7f0;border-color:#d8cfb8;border-left-color:#b5803c}
+    .hero-architecture{background:#faf7f0;border-color:#d8cfb8}
+    .hero-architecture .hero-backdrop{fill:#faf7f0}
+    .hero-architecture .hero-link-label{fill:#8a5a24}
+    .hero-architecture figcaption{color:#8a5a24}
+    .hero-architecture .hero-caption{color:#3a4358}
+    .hero-architecture .hero-node{fill:#fff}
+    .hero-architecture .hero-title{fill:#182035}
+    .hero-architecture .hero-detail{fill:#3a4358}
+    .hero-architecture .hero-layer{fill:#8a5a24}
+    .hero-architecture .arch-mobile{display:none}
+    .hero-architecture svg{display:block}
     .chips li{color:#8a5a24;border-color:#d8cfb8;background:#f6f1e6}
     code{color:#8a5a24;background:#f6f1e6;border-color:#d8cfb8}
     .status{color:#0f7f92;border-color:#9ad9e2;background:#f2fbfc}
@@ -292,8 +327,6 @@
     .stat-num{color:#0f7f92;text-shadow:none}
     .steps li::before{color:#8a5a24;border-color:#b5803c;background:#f6f1e6}
     .badge-warn{color:#8a5a24;border-color:#b5803c;background:#f6f1e6}
-    .brand-mark .bm-ring{stroke:#b5803c}
-    .brand-mark .bm-core{fill:#b5803c}
   }
 </style>
 <noscript><style>
@@ -307,13 +340,21 @@
 
 <header class="chrome">
   <div class="brand">
-    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <circle class="bm-ring" cx="12" cy="12" r="8.5" fill="none" stroke="#c98a3d" stroke-width="2.4"/>
-      <circle class="bm-core" cx="12" cy="12" r="3.2" fill="#e2ac66"/>
-      <rect x="10.9" y="0.5" width="2.2" height="4" rx="1" fill="#c98a3d"/>
-      <rect x="10.9" y="19.5" width="2.2" height="4" rx="1" fill="#c98a3d"/>
-      <rect x="0.5" y="10.9" width="4" height="2.2" rx="1" fill="#c98a3d"/>
-      <rect x="19.5" y="10.9" width="4" height="2.2" rx="1" fill="#c98a3d"/>
+    <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <rect width="64" height="64" rx="14" fill="#172630"/>
+      <g fill="#e6a35e">
+        <rect x="28" y="4" width="8" height="13" rx="2"/>
+        <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(45 32 32)"/>
+        <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(90 32 32)"/>
+        <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(135 32 32)"/>
+        <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(180 32 32)"/>
+        <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(225 32 32)"/>
+        <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(270 32 32)"/>
+        <rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(315 32 32)"/>
+      </g>
+      <circle cx="32" cy="32" r="20" fill="#172630" stroke="#e6a35e" stroke-width="4"/>
+      <path d="M32 21 43 27v10L32 43 21 37V27Z" fill="#e6a35e"/>
+      <path d="m26 37 6-11 6 11m-9-4h6" fill="none" stroke="#172630" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     AutoPart-SyncDistributed <span class="muted">· protótipo acadêmico local</span>
   </div>
@@ -330,22 +371,90 @@
 
 <main class="deck" id="deck" aria-live="off">
 
-  <!-- 1 · Título e tese -->
-  <section class="slide" id="slide-1" role="group" aria-roledescription="slide" aria-label="Slide 1 de 12" aria-labelledby="h-s1">
+  <!-- 1 · Título, tese e diagrama de arquitetura -->
+  <section class="slide slide--opening" id="slide-1" role="group" aria-roledescription="slide" aria-label="Slide 1 de 12" aria-labelledby="h-s1">
     <div class="slide-inner">
-      <p class="kicker">Estudo de caso acadêmico · Execução local · 2026</p>
-      <h1 id="h-s1">AutoPart-SyncDistributed</h1>
-      <p class="lede"><strong>Protótipo acadêmico local de e-commerce de peças automotivas</strong> — da gestão manual de estoque da oficina a um protótipo distribuído: cliente, API e banco de dados separados de verdade, com escopo honesto.</p>
-      <ul class="chips">
-        <li>Vanilla JavaScript</li>
-        <li>Node.js · Express</li>
-        <li>MongoDB · Mongoose</li>
-        <li>JWT</li>
-        <li>bcryptjs</li>
-      </ul>
+      <div class="cover-brand"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14" fill="#172630"/><g fill="#e6a35e"><rect x="28" y="4" width="8" height="13" rx="2"/><rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(45 32 32)"/><rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(90 32 32)"/><rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(135 32 32)"/><rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(180 32 32)"/><rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(225 32 32)"/><rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(270 32 32)"/><rect x="28" y="4" width="8" height="13" rx="2" transform="rotate(315 32 32)"/></g><circle cx="32" cy="32" r="20" fill="#172630" stroke="#e6a35e" stroke-width="4"/><path d="M32 21 43 27v10L32 43 21 37V27Z" fill="#e6a35e"/><path d="m26 37 6-11 6 11m-9-4h6" fill="none" stroke="#172630" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>AutoPart-SyncDistributed · Protótipo acadêmico local · 2026</span></div>
+      <h1 id="h-s1">Diagrama de Arquitetura de Software</h1>
+      <p class="lede">Do navegador ao MongoDB: componentes, integrações e responsabilidades do protótipo local.</p>
+      <figure class="hero-architecture">
+        <figcaption>Visão técnica · fluxo de dados e dependências internas</figcaption>
+        <svg viewBox="0 0 1160 360" role="img" aria-labelledby="hero-arch-title hero-arch-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="hero-arch-title">Diagrama de Arquitetura de Software — AutoPart-SyncDistributed</title>
+          <desc id="hero-arch-desc">Três camadas de um protótipo acadêmico local: navegador HTML CSS JavaScript com catálogo, gestão e carrinho em localStorage; API Node.js Express com rotas REST, JWT, perfis e validação transacional de pedidos e estoque; MongoDB local de membro único via Mongoose, com peças, usuários, pedidos e movimentações. Setas indicam HTTP JSON, acesso por Mongoose e dependências internas, não servidores distribuídos.</desc>
+          <defs>
+            <pattern id="hero-grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#24354b" stroke-width=".6"/></pattern>
+            <marker id="hero-tip" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M1 1 8 4.5 1 8" fill="none" stroke="#e6a35e" stroke-width="1.7"/></marker>
+          </defs>
+          <rect class="hero-backdrop" x="0" y="0" width="1160" height="360" rx="12" fill="#101e31"/>
+          <rect x="0" y="0" width="1160" height="360" rx="12" fill="url(#hero-grid)" opacity=".65"/>
+          <!-- Connections are below the cards, so they never cross their labels. -->
+          <g fill="none" stroke="#e6a35e" stroke-width="2.4" stroke-linecap="round" marker-end="url(#hero-tip)">
+            <path d="M361 127H402"/><path d="M755 127H796"/>
+            <path d="M186 216V247"/><path d="M580 216V247"/><path d="M974 216V247"/>
+          </g>
+          <g class="hero-link-label" fill="#e6a35e" font-size="12" font-family="system-ui,sans-serif" font-weight="700" text-anchor="middle"><text x="382" y="102">JSON</text><text x="776" y="102">ODM</text></g>
+          <!-- Frontend -->
+          <g>
+            <rect class="hero-node" x="14" y="19" width="344" height="197" rx="13" fill="#172a42" stroke="#4ac4d7" stroke-width="1.7"/>
+            <rect x="29" y="35" width="70" height="92" rx="10" fill="#0b3244" stroke="#4ac4d7" stroke-width="1.2"/>
+            <g fill="none" stroke="#4ac4d7" stroke-width="2.2" stroke-linejoin="round"><rect x="40" y="49" width="49" height="48" rx="4"/><path d="M40 62h49M48 72h15M48 81h30M54 103h22"/></g>
+            <circle cx="45" cy="56" r="2" fill="#4ac4d7"/><circle cx="52" cy="56" r="2" fill="#4ac4d7"/>
+            <text class="hero-layer" x="115" y="55" fill="#4ac4d7" font-size="12" font-weight="800" letter-spacing="1.3" font-family="system-ui,sans-serif">01 · FRONTEND</text>
+            <text class="hero-title" x="115" y="88" fill="#ece6d3" font-size="23" font-weight="750" font-family="system-ui,sans-serif">Navegador</text>
+            <text class="hero-detail" x="115" y="115" fill="#c9d4df" font-size="15" font-family="system-ui,sans-serif">HTML · CSS · Vanilla JS</text>
+            <path d="M29 140H341" stroke="#496477" stroke-width="1"/>
+            <circle cx="36" cy="160" r="3.5" fill="#4ac4d7"/><text class="hero-detail" x="47" y="165" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Catálogo e área de gestão</text>
+            <circle cx="36" cy="188" r="3.5" fill="#4ac4d7"/><text class="hero-detail" x="47" y="193" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">fetch → API /api</text>
+          </g>
+          <!-- Backend -->
+          <g>
+            <rect class="hero-node" x="408" y="19" width="344" height="197" rx="13" fill="#172a42" stroke="#e6a35e" stroke-width="1.7"/>
+            <rect x="423" y="35" width="70" height="92" rx="10" fill="#3e2c1e" stroke="#e6a35e" stroke-width="1.2"/>
+            <g fill="none" stroke="#e6a35e" stroke-width="2.2" stroke-linecap="round"><rect x="437" y="51" width="42" height="16" rx="3"/><rect x="437" y="77" width="42" height="16" rx="3"/><path d="M446 106h24"/></g>
+            <circle cx="443" cy="59" r="2" fill="#e6a35e"/><circle cx="443" cy="85" r="2" fill="#e6a35e"/>
+            <text class="hero-layer" x="509" y="55" fill="#e6a35e" font-size="12" font-weight="800" letter-spacing="1.3" font-family="system-ui,sans-serif">02 · BACKEND</text>
+            <text class="hero-title" x="509" y="88" fill="#ece6d3" font-size="23" font-weight="750" font-family="system-ui,sans-serif">API Express</text>
+            <text class="hero-detail" x="509" y="115" fill="#c9d4df" font-size="15" font-family="system-ui,sans-serif">Node.js · rotas REST</text>
+            <path d="M423 140H735" stroke="#496477" stroke-width="1"/>
+            <circle cx="430" cy="160" r="3.5" fill="#e6a35e"/><text class="hero-detail" x="441" y="165" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Preço, pedido e estoque</text>
+            <circle cx="430" cy="188" r="3.5" fill="#e6a35e"/><text class="hero-detail" x="441" y="193" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Autorização por perfil</text>
+          </g>
+          <!-- Persistence -->
+          <g>
+            <rect class="hero-node" x="802" y="19" width="344" height="197" rx="13" fill="#172a42" stroke="#a78bfa" stroke-width="1.7"/>
+            <rect x="817" y="35" width="70" height="92" rx="10" fill="#30274b" stroke="#a78bfa" stroke-width="1.2"/>
+            <g fill="none" stroke="#a78bfa" stroke-width="2.3"><ellipse cx="852" cy="58" rx="23" ry="9"/><path d="M829 58v42c0 12 46 12 46 0V58M829 79c0 12 46 12 46 0"/></g>
+            <text class="hero-layer" x="903" y="55" fill="#a78bfa" font-size="12" font-weight="800" letter-spacing="1.3" font-family="system-ui,sans-serif">03 · DADOS</text>
+            <text class="hero-title" x="903" y="88" fill="#ece6d3" font-size="23" font-weight="750" font-family="system-ui,sans-serif">MongoDB</text>
+            <text class="hero-detail" x="903" y="115" fill="#c9d4df" font-size="15" font-family="system-ui,sans-serif">Mongoose · loopback</text>
+            <path d="M817 140H1129" stroke="#496477" stroke-width="1"/>
+            <circle cx="824" cy="160" r="3.5" fill="#a78bfa"/><text class="hero-detail" x="835" y="165" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Peças, pedidos e usuários</text>
+            <circle cx="824" cy="188" r="3.5" fill="#a78bfa"/><text class="hero-detail" x="835" y="193" fill="#c9d4df" font-size="14" font-family="system-ui,sans-serif">Movimentações de estoque</text>
+          </g>
+          <!-- Dependent mechanisms, not separate machines -->
+          <g>
+            <rect class="hero-node" x="14" y="253" width="344" height="69" rx="10" fill="#18334a" stroke="#4ac4d7" stroke-width="1.2"/>
+            <g fill="none" stroke="#4ac4d7" stroke-width="2"><path d="M32 275h22l-3 19H36zM37 275l-2-7M50 275l2-7"/><circle cx="39" cy="300" r="2"/><circle cx="50" cy="300" r="2"/></g>
+            <text class="hero-title" x="72" y="279" fill="#ece6d3" font-size="17" font-weight="700" font-family="system-ui,sans-serif">Carrinho local</text>
+            <text class="hero-detail" x="72" y="302" fill="#c9d4df" font-size="13" font-family="system-ui,sans-serif">localStorage · checkout simulado</text>
+            <rect class="hero-node" x="408" y="253" width="344" height="69" rx="10" fill="#3b2a25" stroke="#e6a35e" stroke-width="1.2"/>
+            <g fill="none" stroke="#e6a35e" stroke-width="2.2"><path d="M439 264l17 6v13c0 11-8 18-17 22-9-4-17-11-17-22v-13z"/><path d="m431 283 6 6 11-13"/></g>
+            <text class="hero-title" x="466" y="279" fill="#ece6d3" font-size="17" font-weight="700" font-family="system-ui,sans-serif">Segurança e regras</text>
+            <text class="hero-detail" x="466" y="302" fill="#c9d4df" font-size="13" font-family="system-ui,sans-serif">JWT · bcryptjs · transações</text>
+            <rect class="hero-node" x="802" y="253" width="344" height="69" rx="10" fill="#302a4a" stroke="#a78bfa" stroke-width="1.2"/>
+            <g fill="none" stroke="#a78bfa" stroke-width="2.2"><path d="M827 266h27v34h-27zM833 275h15M833 282h15M833 289h11"/></g>
+            <text class="hero-title" x="866" y="279" fill="#ece6d3" font-size="17" font-weight="700" font-family="system-ui,sans-serif">Persistência local</text>
+            <text class="hero-detail" x="866" y="302" fill="#c9d4df" font-size="13" font-family="system-ui,sans-serif">Replica set rs0 · membro único</text>
+          </g>
+          <text class="hero-detail" x="580" y="346" fill="#aab8c8" font-size="12" text-anchor="middle" font-family="system-ui,sans-serif">Aplicação acadêmica local · Não representa múltiplos servidores ou alta disponibilidade</text>
+        </svg>
+        <div class="arch-mobile" role="img" aria-label="Navegador conectado à API Express por HTTP e JSON; API conectada ao MongoDB por Mongoose. Carrinho local, autorização e coleções são mecanismos internos, não outros servidores."><div><strong>01 · Navegador</strong><span>HTML · CSS · JavaScript · catálogo e gestão</span></div><b>↓ HTTP / JSON</b><div><strong>02 · API Express</strong><span>Node.js · preço, pedido, estoque e permissões</span></div><b>↓ Mongoose</b><div><strong>03 · MongoDB local</strong><span>Peças · pedidos · usuários · movimentações</span></div><div><strong>Mecanismos internos</strong><span>localStorage · JWT · bcryptjs · transações em rs0</span></div></div>
+        <p class="hero-caption">Três camadas na mesma demonstração local · Sem pagamento real ou alta disponibilidade.</p>
+      </figure>
       <aside class="pnotes" lang="ar" dir="rtl" hidden>
         <h2>ملاحظة الشرح</h2>
-        <p>عرّف المشروع: نموذج أولي أكاديمي محلي لمتجر قطع غيار. الفكرة الأساسية: فصل حقيقي بين الواجهة والخادم وقاعدة البيانات، وكل شيء يعمل محليًا بدون سحابة.</p>
+        <p>ابدأ من اليسار: الواجهة في المتصفح مبنية بـHTML وCSS وVanilla JS، وتعرض الكتالوج ولوحة الإدارة؛ السلة مؤقتًا في localStorage. السهم الأول هو طلبات HTTP/JSON إلى API على Node.js وExpress. الخادم يتحقق من JWT وصلاحية الدور، ثم يعيد التحقق من السعر والمخزون ويُنشئ الطلب التجريبي مع حركة خروج داخل معاملة. السهم الثاني هو وصول Mongoose إلى MongoDB المحلي، الذي يحفظ القطع والمستخدمين والطلبات وحركات المخزون. المربعات السفلية تفاصيل داخل هذه الطبقات، وليست خدمات أو أجهزة مستقلة؛ rs0 عضو واحد فقط لتمكين المعاملات، لا يعني توفرًا عاليًا أو نظامًا موزعًا. لا يوجد دفع حقيقي، وإتاحة Tailscale خاصة للتجربة.</p>
       </aside>
     </div>
   </section>
@@ -388,10 +497,10 @@
           <p>Cadastra e edita peças, preço e estoque, acompanha os pedidos e atualiza seus status — <strong>sempre via API protegida</strong> por perfil.</p>
         </div>
       </div>
-      <p class="foot-note">Contas genéricas de demonstração acadêmica: <code>admin.demo@autopart.test</code> · <code>cliente.demo@autopart.test</code> — senha pública de demonstração: <code><SENHA_DEMO_LOCAL></code></p>
+      <p class="foot-note">Contas genéricas da demo, se o seed local estiver habilitado: <code>admin.demo@autopart.test</code> · <code>cliente.demo@autopart.test</code>. A senha é definida localmente, não publicada aqui.</p>
       <aside class="pnotes" lang="ar" dir="rtl" hidden>
         <h2>ملاحظة الشرح</h2>
-        <p>دوران فقط: العميل يشتري، والمشرف يدير. اذكر الحسابين التجريبيين العامين وكلمة السر الأكاديمية المعتمدة للعرض المحلي.</p>
+        <p>دوران: العميل يرسل طلبًا تجريبيًا، والمشرف يدير. الحسابان التجريبيان يظهران فقط بعد تفعيل seed محلي؛ لا تعرض كلمة السر في الشريحة.</p>
       </aside>
     </div>
   </section>
@@ -568,16 +677,16 @@
       <h2 id="h-s11">Demonstração local — sequência de verificação</h2>
       <ol class="steps">
         <li>Subir o banco: <code>docker compose up -d mongodb</code></li>
-        <li>Preparar <code>.env</code> a partir de <code>.env.example</code>: <code>JWT_SECRET</code> privado (32+ caracteres), <code>SEED_DEMO_DATA=true</code>, <code>SEED_DEMO_PASSWORD=<SENHA_DEMO_LOCAL></code></li>
+        <li>Preparar <code>.env</code> a partir de <code>.env.example</code>: <code>JWT_SECRET</code> privado (32+ caracteres); para contas demo, ativar <code>SEED_DEMO_DATA=true</code> e definir <code>SEED_DEMO_PASSWORD</code> localmente.</li>
         <li>Iniciar o servidor: <code>node server/index.js</code></li>
-        <li>Abrir <code>http://localhost:5500</code></li>
-        <li>Entrar com <code>admin.demo@autopart.test</code> e com <code>cliente.demo@autopart.test</code> — senha de demonstração <code><SENHA_DEMO_LOCAL></code></li>
+        <li>Abrir <code>http://127.0.0.1:3000</code> (ou usar a porta configurada em <code>PORT</code>, por exemplo 5500).</li>
+        <li>Se o seed foi habilitado, entrar como <code>admin.demo@autopart.test</code> e <code>cliente.demo@autopart.test</code> com a senha definida localmente.</li>
         <li>Checklist rápido: catálogo 200 · pedido do cliente · produtos e pedidos do admin · 403 do cliente em <code>/api/admin</code></li>
       </ol>
       <p class="foot-note">Isto é uma checagem pré-apresentação; o runtime local não é alegado como permanentemente online. Nunca exibir o valor de <code>JWT_SECRET</code>.</p>
       <aside class="pnotes" lang="ar" dir="rtl" hidden>
         <h2>ملاحظة الشرح</h2>
-        <p>هذه قائمة فحص قبل العرض وليست خدمة دائمة: شغّل MongoDB ثم الخادم، افتح المنفذ 5500، وجرّب الحسابين، وتحقق من 200/403 قبل دخول القاعة.</p>
+        <p>هذه قائمة فحص قبل العرض وليست خدمة دائمة: شغّل MongoDB ثم الخادم، افتح المنفذ المضبوط (3000 افتراضيًا)، وجرّب الحسابين إن فعّلت seed، وتحقق من 200/403 قبل دخول القاعة.</p>
       </aside>
     </div>
   </section>
@@ -614,8 +723,8 @@
     <defs>
       <linearGradient id="schemGrad" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#7c5522"/>
-        <stop offset=".55" stop-color="#c98a3d"/>
-        <stop offset="1" stop-color="#e2ac66"/>
+        <stop offset=".55" stop-color="#d9682e"/>
+        <stop offset="1" stop-color="#e6a35e"/>
       </linearGradient>
       <mask id="schemMask">
         <rect id="schemMaskRect" x="0" y="0" width="0" height="64" fill="#fff"/>

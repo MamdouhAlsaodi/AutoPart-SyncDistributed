@@ -17,6 +17,34 @@ const App = {
         await this.loadCatalogue();
     },
     escape(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+    stockDistribution(parts) {
+        const active = (parts || []).filter(p => p.ativo !== false);
+        const zero = active.filter(p => Number(p.estoque_atual) <= 0).length;
+        const low = active.filter(p => Number(p.estoque_atual) > 0 && Number(p.estoque_atual) <= Number(p.estoque_minimo)).length;
+        return { zero, low, healthy: active.length - zero - low, total: active.length };
+    },
+    renderStockChart(parts) {
+        const d = this.stockDistribution(parts);
+        if (!d.total) return '<section class="operations-panel"><h2>Distribuição do estoque</h2><p>Nenhuma peça ativa cadastrada.</p></section>';
+        const healthy = d.healthy / d.total * 100, lowEnd = (d.healthy + d.low) / d.total * 100;
+        const legend = [['Adequado', d.healthy, 'healthy'], ['Baixo', d.low, 'low'], ['Sem estoque', d.zero, 'zero']];
+        return `<section class="analytics-panel"><div class="analytics-title"><div><p class="eyebrow">Leitura do estoque</p><h2>Distribuição por situação</h2></div><span>Peças ativas</span></div><div class="analytics-layout"><div class="stock-donut" aria-hidden="true" style="--healthy:${healthy}%;--low-end:${lowEnd}%"><div><strong>${d.total}</strong><span>peças</span></div></div><div class="analytics-legend">${legend.map(([name,count,tone])=>`<div class="analytics-row"><div><span><i class="key-${tone}"></i>${name}</span><strong>${count} <small>· ${Math.round(count / d.total * 100)}%</small></strong></div><div class="analytics-track"><span class="key-${tone}" style="width:${count / d.total * 100}%"></span></div></div>`).join('')}</div></div><p class="operations-note">Baixo: acima de zero e até o mínimo cadastrado. Sem estoque: zero unidades.</p></section>`;
+    },
+    toCsv(rows) {
+        return '\ufeff' + rows.map(row => row.map(value => {
+            let cell = String(value ?? '');
+            if (/^[\s\u0000-\u001f]*[=+\-@]/.test(cell)) cell = "'" + cell;
+            return '"' + cell.replace(/"/g, '""') + '"';
+        }).join(',')).join('\r\n');
+    },
+    downloadReport(rows) {
+        const blob = new Blob([this.toCsv(rows)], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url; anchor.download = 'autopart-relatorio-estoque.csv';
+        document.body.appendChild(anchor); anchor.click(); anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    },
     summarizeOperations(parts, history) {
         const active = (parts || []).filter(p => p.ativo !== false);
         const movements = Array.isArray(history) ? history : [];
@@ -181,7 +209,7 @@ const App = {
             if (!target.isConnected) return;
             const parts = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
             const summary = this.summarizeOperations(parts, []);
-            target.innerHTML = `<div class="report-cards">${[['Peças ativas', summary.totalProducts], ['Unidades em estoque', summary.stockUnits], ['Estoque baixo', summary.lowStock], ['Sem estoque', summary.outOfStock]].map(([label, value]) => `<article class="report-card"><span>${label}</span><strong>${this.escape(value)}</strong></article>`).join('')}</div>`;
+            target.innerHTML = `<div class="report-cards">${[['Peças ativas', summary.totalProducts], ['Unidades em estoque', summary.stockUnits], ['Estoque baixo (inclui zerado)', summary.lowStock], ['Sem estoque', summary.outOfStock]].map(([label, value]) => `<article class="report-card"><span>${label}</span><strong>${this.escape(value)}</strong></article>`).join('')}</div>${this.renderStockChart(parts)}`;
         } catch (error) {
             if (target.isConnected) target.textContent = error.mensagem || 'Não foi possível carregar o resumo de estoque.';
         }
@@ -389,7 +417,10 @@ const App = {
             const unusualCodes = parts.filter(p => p.ativo !== false && Number(p.estoque_atual) > 1000)
                 .slice(0, 3).map(p => this.escape(p.codigo)).join(', ');
             const warning = summary.highStock ? `<p class="operations-warning" role="status">Atenção: ${summary.highStock} peça(s) têm mais de 1.000 unidades em estoque (${unusualCodes}). Esses cadastros elevam os totais; confira os números antes da apresentação.</p>` : '';
-            document.getElementById('reports-content').innerHTML = `<p class="operations-note">Valores estimados do estoque a preço de catálogo, não receita nem vendas. Movimentações consideram apenas os últimos 100 registros; a carga inicial de pedidos não possui histórico de estoque.</p><div class="report-cards">${cards}</div>${warning}<section class="operations-panel"><h2>Estoque a preço de catálogo</h2><strong class="report-value">R$ ${money(summary.stockValue)}</strong><p class="operations-note">Estimativa: unidades atuais × preço de venda. Não é faturamento.</p></section><section class="operations-panel"><h2>Movimentações recentes</h2>${bar('Entradas', summary.entries, summary.unitsIn, 'report-in')}${bar('Saídas', summary.exits, summary.unitsOut, 'report-out')}${history.length ? '' : '<p>Nenhuma movimentação registrada ainda.</p>'}</section>${ordersPanel}<section class="operations-panel"><h2>Peças com estoque baixo</h2><div class="operations-table"><table><thead><tr><th>Código</th><th>Peça</th><th>Atual</th><th>Mínimo</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nenhum alerta de estoque.</td></tr>'}</tbody></table></div></section>`;
+            document.getElementById('reports-content').innerHTML = `<div class="report-actions"><button type="button" class="parts-primary" id="report-csv">↓ Exportar CSV</button><button type="button" class="part-cancel" id="report-print">Imprimir / salvar PDF</button></div><p class="operations-note">Valores estimados do estoque a preço de catálogo, não receita nem vendas. Movimentações consideram apenas os últimos 100 registros; a carga inicial de pedidos não possui histórico de estoque.</p><div class="report-cards">${cards}</div>${warning}${this.renderStockChart(parts)}<section class="operations-panel"><h2>Estoque a preço de catálogo</h2><strong class="report-value">R$ ${money(summary.stockValue)}</strong><p class="operations-note">Estimativa: unidades atuais × preço de venda. Não é faturamento.</p></section><section class="operations-panel"><h2>Movimentações recentes</h2>${bar('Entradas', summary.entries, summary.unitsIn, 'report-in')}${bar('Saídas', summary.exits, summary.unitsOut, 'report-out')}${history.length ? '' : '<p>Nenhuma movimentação registrada ainda.</p>'}</section>${ordersPanel}<section class="operations-panel"><h2>Peças com estoque baixo</h2><div class="operations-table"><table><thead><tr><th>Código</th><th>Peça</th><th>Atual</th><th>Mínimo</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nenhum alerta de estoque.</td></tr>'}</tbody></table></div></section>`;
+            const csvRows = [['Relatório de estoque AutoPart'], ['Gerado em', new Date().toLocaleString('pt-BR')], ['Aviso', 'Estoque a preço de catálogo; não representa vendas ou receita. Movimentações: últimos 100 registros.'], ['Peças ativas', summary.totalProducts], ['Unidades em estoque', summary.stockUnits], ['Estoque baixo (inclui zerado)', summary.lowStock], ['Sem estoque', summary.outOfStock], ['Valor estimado do estoque (R$)', summary.stockValue], ['Entradas recentes (registros)', summary.entries], ['Saídas recentes (registros)', summary.exits], [], ['Código', 'Peça', 'Estoque atual', 'Estoque mínimo', 'Preço de catálogo (R$)'], ...parts.filter(p => p.ativo !== false).map(p => [p.codigo, p.nome, p.estoque_atual, p.estoque_minimo, p.preco_venda])];
+            document.getElementById('report-csv').onclick = () => this.downloadReport(csvRows);
+            document.getElementById('report-print').onclick = () => window.print();
         } catch (error) { document.getElementById('reports-content').textContent = error.mensagem || 'Erro ao carregar relatórios.'; }
     },
 

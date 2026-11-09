@@ -38,6 +38,7 @@ const App = {
     async showProduct(id) { try { const result = await api.getCatalogueDetail(id), p = result.data || result; const compatibilidades = Array.isArray(p.compatibilidades) ? p.compatibilidades : []; const compatibilityHtml = compatibilidades.length ? compatibilidades.map(c => `<li>${this.escape(c.marca)} ${this.escape(c.modelo)} — ${this.escape(Array.isArray(c.anos) ? c.anos.join(', ') : c.anos)}</li>`).join('') : '<li>Nenhuma compatibilidade informada.</li>'; document.getElementById('product-detail').innerHTML = `<h2>${this.escape(p.nome)}</h2><p>${this.escape(p.descricao)}</p><p>Categoria: ${this.escape(p.categoria || 'Sem categoria')}</p><p>Estoque: ${this.escape(p.estoque_atual)}</p><p>R$ ${Number(p.preco_venda).toFixed(2)}</p><h3>Compatibilidade</h3><ul>${compatibilityHtml}</ul>`; document.getElementById('product-detail').insertAdjacentHTML('beforeend', `<button id="detail-add">Adicionar</button>`); document.getElementById('detail-add').onclick = () => { Cart.addProduct({id:p.id || p._id,nome:p.nome,preco_venda:p.preco_venda}); this.updateCartCount(); const status = document.getElementById('cart-status'); if (status) status.textContent = 'Produto adicionado ao carrinho.'; }; document.getElementById('product-modal').classList.remove('hidden'); } catch (e) { this.showFeedback(e.mensagem || 'Produto indisponível'); } },
 
     go(page) {
+        this.closeAddPartModal();
         this.state.page = page;
         const pages = {
             storefront: () => this.pageStorefront(),
@@ -170,7 +171,19 @@ const App = {
         modal.querySelector('form').onsubmit = async event => { event.preventDefault(); const button = event.target.querySelector('[type="submit"]'); button.disabled = true; try { const fields = Object.fromEntries(new FormData(event.target)); for (const key of ['preco_venda', 'estoque_atual', 'estoque_minimo']) fields[key] = Number(fields[key]); await api.admin.updateProduct(id, { ...payload, ...fields }); close(); await onSaved(); } catch (error) { modal.querySelector('.admin-modal-error').textContent = error.mensagem || 'Não foi possível atualizar a peça.'; button.disabled = false; } };
     },
     async pageDashboard() {
-        const app=document.getElementById('app'); app.innerHTML=`<div class="management-shell"><aside class="management-sidebar">${this.sidebar('dashboard')}</aside><main class="management-workspace"><header class="management-header"><div><p class="eyebrow">AutoPart Gestão</p><h1 class="page-heading">Visão geral</h1></div></header><section class="dashboard-grid"><article class="management-card"><h2>Operação diária</h2><p>Consulte estoque, movimentações e relatórios pelo menu lateral.</p></article><article class="management-card"><h2>Acesso atual</h2><p>${this.escape(this.state.user?.nome||'Usuário')} · ${this.escape(this.state.user?.perfil||'')}</p></article></section></main></div>`;
+        if (!['admin', 'operador', 'consulta'].includes(this.state.user?.perfil)) { this.go('storefront'); return; }
+        const app = document.getElementById('app');
+        app.innerHTML = `<div class="management-shell"><aside class="management-sidebar">${this.sidebar('dashboard')}</aside><main class="management-workspace operations-page"><header class="management-header"><div><p class="eyebrow">AutoPart Gestão · demonstração</p><h1 class="page-heading">Visão geral</h1><p class="parts-subtitle">Um resumo do estoque e atalhos para sua operação.</p></div></header><div id="dashboard-content" role="status" aria-live="polite">Carregando resumo...</div><section class="operations-panel"><h2>Acesso rápido</h2><div class="overview-links"><button type="button" onclick="App.go('parts')">Peças e catálogo <span>Consultar estoque →</span></button><button type="button" onclick="App.go('movements')">Movimentações <span>Ver histórico →</span></button><button type="button" onclick="App.go('reports')">Relatórios <span>Ver indicadores →</span></button>${this.state.user.perfil === 'admin' ? `<button type="button" onclick="App.go('admin-management')">Central de operações <span>Produtos e pedidos →</span></button>` : ''}</div></section><p class="operations-note">Acesso atual: ${this.escape(this.state.user.nome || 'Usuário')} · ${this.escape(this.state.user.perfil)}</p></main></div>`;
+        const target = document.getElementById('dashboard-content');
+        try {
+            const result = await api.getParts();
+            if (!target.isConnected) return;
+            const parts = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
+            const summary = this.summarizeOperations(parts, []);
+            target.innerHTML = `<div class="report-cards">${[['Peças ativas', summary.totalProducts], ['Unidades em estoque', summary.stockUnits], ['Estoque baixo', summary.lowStock], ['Sem estoque', summary.outOfStock]].map(([label, value]) => `<article class="report-card"><span>${label}</span><strong>${this.escape(value)}</strong></article>`).join('')}</div>`;
+        } catch (error) {
+            if (target.isConnected) target.textContent = error.mensagem || 'Não foi possível carregar o resumo de estoque.';
+        }
     },
     pageAccount() { this.pageLogin(true); },
     pageLogin(account = false) {
@@ -188,105 +201,65 @@ const App = {
     async pageOrders() { const app=document.getElementById('app'); app.innerHTML='<main class="orders-page"><button type="button" id="orders-back">Voltar ao catálogo</button><h1>Meus pedidos</h1><p role="status">Carregando pedidos...</p><div id="orders-list"></div></main>'; document.getElementById('orders-back').onclick=()=>this.go('storefront'); try { const orders=await api.getMyOrders(); const list=document.getElementById('orders-list'); list.innerHTML=orders.length?orders.map(o=>`<article><strong>Pedido ${this.escape(o.id)}</strong><p>Status: ${this.escape(o.status)} · Total: R$ ${Number(o.total).toFixed(2)} · ${this.escape(o.criado_em)}</p><button data-order="${this.escape(o.id)}">Detalhes</button></article>`).join(''):'<p>Nenhum pedido.</p>'; list.querySelectorAll('[data-order]').forEach(b=>b.onclick=async()=>{const o=await api.getMyOrder(b.dataset.order); document.getElementById('orders-list').insertAdjacentHTML('beforeend',`<pre>${this.escape(JSON.stringify(o.items,null,2))}</pre>`);}); } catch(e) { app.querySelector('[role=status]').textContent='Não foi possível carregar os pedidos.'; } },
 
     // ============ PARTS ============
+    filterParts(parts, query) {
+        const term = String(query || '').trim().toLocaleLowerCase();
+        return parts.filter(p => !term || [p.nome, p.codigo].some(v => String(v || '').toLocaleLowerCase().includes(term)));
+    },
     async pageParts() {
-        document.getElementById('app').innerHTML = `<div class="management-shell"><aside class="management-sidebar">${this.sidebar('parts')}</aside><main class="management-workspace">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="page-heading text-3xl font-bold">Catálogo de autopeças</h1>
-                <button onclick="App.showAddPartModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all"><i class="fas fa-plus"></i> Nova peça</button>
-            </div>
-            <div class="flex gap-3 mb-6">
-                <input type="text" id="search-input" placeholder="Buscar por nome ou código..." class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
-                <button onclick="App.searchParts()" class="bg-slate-200 hover:bg-slate-300 px-4 py-2.5 rounded-lg font-medium transition-all"><i class="fas fa-search"></i></button>
-            </div>
-            <div id="parts-table" class="table-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><p class="p-6 text-slate-400">Carregando...</p></div>
-        </main></div>`;
+        if (!['admin', 'operador', 'consulta'].includes(this.state.user?.perfil)) { this.go('storefront'); return; }
+        const app = document.getElementById('app');
+        const canCreate = ['admin', 'operador'].includes(this.state.user.perfil);
+        app.innerHTML = `<div class="management-shell"><aside class="management-sidebar">${this.sidebar('parts')}</aside><main class="management-workspace parts-page"><header class="management-header"><div><p class="eyebrow">Estoque · demonstração</p><h1 class="page-heading">Peças e catálogo</h1><p class="parts-subtitle">Consulte as peças e acompanhe o estoque atual.</p></div>${canCreate ? '<button type="button" class="parts-primary" id="part-create">+ Nova peça</button>' : ''}</header><section class="operations-panel"><label class="parts-search-label" for="search-input">Buscar por nome ou código</label><input id="search-input" class="parts-search" type="search" placeholder="Digite para buscar..." autocomplete="off"><p id="parts-count" class="parts-count" role="status" aria-live="polite">Carregando peças...</p><div id="parts-table" class="operations-table"></div></section></main></div>`;
+        const input = document.getElementById('search-input');
+        const table = document.getElementById('parts-table');
+        const count = document.getElementById('parts-count');
+        document.getElementById('part-create')?.addEventListener('click', () => this.showAddPartModal());
+        let parts = null;
+        const render = () => {
+            if (!parts) return;
+            const filtered = this.filterParts(parts, input.value);
+            count.textContent = `${filtered.length} peça(s) encontrada(s)`;
+            const rows = filtered.map(p => `<tr><td>${this.escape(p.codigo)}</td><td>${this.escape(p.nome)}</td><td>${this.escape(p.categoria || '—')}</td><td>${this.escape(p.estoque_atual)}</td><td>R$ ${Number(p.preco_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td><td><span class="part-status ${Number(p.estoque_atual) <= Number(p.estoque_minimo) ? 'part-status--low' : ''}">${Number(p.estoque_atual) <= Number(p.estoque_minimo) ? 'Baixo' : 'OK'}</span></td></tr>`).join('');
+            table.innerHTML = `<table><thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Estoque</th><th>Preço</th><th>Status</th></tr></thead><tbody>${rows || '<tr><td colspan="6">Nenhuma peça encontrada.</td></tr>'}</tbody></table>`;
+        };
+        input.addEventListener('input', render);
         try {
-            const res = await api.getParts();
-            const parts = res.data || res;
-            const tableRows = parts.map(p => `
-                <tr class="border-t border-slate-100 hover:bg-slate-50">
-                    <td class="px-4 py-3 font-mono text-sm">${p.codigo}</td>
-                    <td class="px-4 py-3 font-medium">${p.nome}</td>
-                    <td class="px-4 py-3 text-sm">${p.categoria || '-'}</td>
-                    <td class="px-4 py-3 text-sm text-right">${p.estoque_atual}</td>
-                    <td class="px-4 py-3 text-sm text-right font-medium">${p.preco_venda.toFixed(2)}</td>
-                    <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${p.estoque_atual <= p.estoque_minimo ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${p.estoque_atual <= p.estoque_minimo ? 'Baixo' : 'OK'}</span></td>
-                </tr>`).join('');
-            document.getElementById('parts-table').innerHTML = `<table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-3 text-left font-medium text-slate-600">Código</th><th class="px-4 py-3 text-left font-medium text-slate-600">Nome</th><th class="px-4 py-3 text-left font-medium text-slate-600">Categoria</th><th class="px-4 py-3 text-right font-medium text-slate-600">Estoque</th><th class="px-4 py-3 text-right font-medium text-slate-600">Preço</th><th class="px-4 py-3 text-left font-medium text-slate-600">Status</th></tr></thead><tbody>${tableRows}</tbody></table>`;
-        } catch(e) { console.error(e); document.getElementById('parts-table').innerHTML = '<p class="p-6 text-red-500">Erro ao carregar peças</p>'; }
+            const result = await api.getParts();
+            if (!input.isConnected) return;
+            parts = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
+            render();
+        } catch (error) {
+            if (count.isConnected) count.textContent = error.mensagem || 'Não foi possível carregar as peças.';
+        }
     },
-
-    async searchParts() {
-        const query = document.getElementById('search-input').value;
-        try {
-            const res = await api.getParts({ busca: query });
-            const parts = res.data || res;
-            const tableRows = parts.map(p => `
-                <tr class="border-t border-slate-100 hover:bg-slate-50">
-                    <td class="px-4 py-3 font-mono text-sm">${p.codigo}</td>
-                    <td class="px-4 py-3 font-medium">${p.nome}</td>
-                    <td class="px-4 py-3 text-sm">${p.categoria || '-'}</td>
-                    <td class="px-4 py-3 text-sm text-right">${p.estoque_atual}</td>
-                    <td class="px-4 py-3 text-sm text-right font-medium">${p.preco_venda.toFixed(2)}</td>
-                    <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${p.estoque_atual <= p.estoque_minimo ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${p.estoque_atual <= p.estoque_minimo ? 'Baixo' : 'OK'}</span></td>
-                </tr>`).join('');
-            document.getElementById('parts-table').innerHTML = `<table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-3 text-left font-medium text-slate-600">Código</th><th class="px-4 py-3 text-left font-medium text-slate-600">Nome</th><th class="px-4 py-3 text-left font-medium text-slate-600">Categoria</th><th class="px-4 py-3 text-right font-medium text-slate-600">Estoque</th><th class="px-4 py-3 text-right font-medium text-slate-600">Preço</th><th class="px-4 py-3 text-left font-medium text-slate-600">Status</th></tr></thead><tbody>${tableRows}</tbody></table>`;
-        } catch(e) { console.error(e); this.showFeedback('Erro ao buscar'); }
-    },
-
     showAddPartModal() {
+        if (document.getElementById('add-part-modal')) return;
+        const previousFocus = document.activeElement;
         const modal = document.createElement('div');
         modal.id = 'add-part-modal';
-        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4';
-        modal.innerHTML = `
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                    <h2 class="text-xl font-bold text-slate-900">Nova peça</h2>
-                    <button onclick="App.closeAddPartModal()" class="text-slate-400 hover:text-slate-600 transition-colors"><i class="fas fa-times text-xl"></i></button>
-                </div>
-                <form id="add-part-form" class="p-6 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Nome da Peça</label>
-                            <input type="text" name="nome" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Pastilha de Freio Dianteira">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Código</label>
-                            <input type="text" name="codigo" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: PF-001">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
-                            <input type="text" name="descricao" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Pastilha cerâmica">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Preço de Custo (R$)</label>
-                            <input type="number" step="0.01" name="preco_custo" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Preço de Venda (R$)</label>
-                            <input type="number" step="0.01" name="preco_venda" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Estoque Inicial</label>
-                            <input type="number" name="estoque_atual" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Estoque Mínimo (Alerta)</label>
-                            <input type="number" name="estoque_minimo" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="5">
-                        </div>
-                    </div>
-                    <div class="pt-4 flex gap-3">
-                        <button type="button" onclick="App.closeAddPartModal()" class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 font-medium text-slate-700 hover:bg-slate-50 transition-all">Cancelar</button>
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all">Salvar peça</button>
-                    </div>
-                </form>
-            </div>`;
+        modal.className = 'part-modal';
+        modal.innerHTML = `<div class="part-modal-card" role="dialog" aria-modal="true" aria-labelledby="part-modal-title"><header class="part-modal-header"><div><p class="eyebrow">Catálogo</p><h2 id="part-modal-title">Nova peça</h2></div><button type="button" class="part-modal-close" aria-label="Fechar">×</button></header><form id="add-part-form" class="part-form"><label class="part-wide">Nome da peça<input name="nome" required maxlength="160" placeholder="Ex.: Pastilha de freio"></label><label>Código<input name="codigo" required maxlength="60" placeholder="Ex.: PF-001"></label><label>Descrição<input name="descricao" maxlength="400" placeholder="Descrição da peça"></label><label>Preço de custo (R$)<input name="preco_custo" type="number" min="0" step="0.01" required></label><label>Preço de venda (R$)<input name="preco_venda" type="number" min="0" step="0.01" required></label><label>Estoque inicial<input name="estoque_atual" type="number" min="0" step="1" required></label><label>Estoque mínimo<input name="estoque_minimo" type="number" min="0" step="1" required value="5"></label><p id="part-form-error" class="part-form-error part-wide" role="alert"></p><div class="part-modal-actions part-wide"><button type="button" class="part-cancel">Cancelar</button><button type="submit" class="parts-primary">Salvar peça</button></div></form></div>`;
+        const onKeydown = e => {
+            if (e.key === 'Escape') { e.preventDefault(); this.closeAddPartModal(); return; }
+            if (e.key === 'Tab') {
+                const items = [...modal.querySelectorAll('button:not([disabled]), input:not([disabled])')];
+                if (e.shiftKey && document.activeElement === items[0]) { e.preventDefault(); items[items.length - 1].focus(); }
+                else if (!e.shiftKey && document.activeElement === items[items.length - 1]) { e.preventDefault(); items[0].focus(); }
+            }
+        };
+        this._partModalCleanup = () => { document.removeEventListener('keydown', onKeydown); if (previousFocus?.isConnected) previousFocus.focus(); };
+        document.addEventListener('keydown', onKeydown);
+        modal.addEventListener('click', e => { if (e.target === modal) this.closeAddPartModal(); });
         document.body.appendChild(modal);
-        document.getElementById('add-part-form').onsubmit = (e) => this.savePart(e);
+        modal.querySelector('.part-modal-close').onclick = () => this.closeAddPartModal();
+        modal.querySelector('.part-cancel').onclick = () => this.closeAddPartModal();
+        modal.querySelector('form').onsubmit = e => this.savePart(e);
+        modal.querySelector('input[name="nome"]').focus();
     },
-
     closeAddPartModal() {
         document.getElementById('add-part-modal')?.remove();
+        this._partModalCleanup?.();
+        this._partModalCleanup = null;
     },
 
     async savePart(e) {
@@ -300,13 +273,19 @@ const App = {
         data.estoque_atual = parseInt(data.estoque_atual);
         data.estoque_minimo = parseInt(data.estoque_minimo);
 
+        const button = e.target.querySelector('button[type="submit"]');
+        const ownerModal = e.target.closest('#add-part-modal');
+        const errorPanel = document.getElementById('part-form-error');
+        button.disabled = true;
         try {
             await api.createPart(data);
-            this.closeAddPartModal();
-            this.pageParts(); // Refresh list
+            if (ownerModal?.isConnected) {
+                this.closeAddPartModal();
+                if (this.state.page === 'parts') this.pageParts();
+            }
         } catch (err) {
-            this.showFeedback(err.mensagem || 'Erro ao salvar peça');
-        }
+            if (errorPanel?.isConnected) errorPanel.textContent = err.mensagem || 'Erro ao salvar peça';
+        } finally { button.disabled = false; }
     },
 
     // ============ MOVEMENTS ============

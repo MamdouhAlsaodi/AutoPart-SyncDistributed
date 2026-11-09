@@ -39,6 +39,7 @@ const App = {
 
     go(page) {
         this.closeAddPartModal();
+        this.closeUserModal();
         this.state.page = page;
         const pages = {
             storefront: () => this.pageStorefront(),
@@ -193,12 +194,53 @@ const App = {
         document.getElementById('register-form').onsubmit = async e => { e.preventDefault(); const n=document.getElementById('register-nome').value.trim(), em=document.getElementById('register-email').value.trim(), pw=document.getElementById('register-password').value, cf=document.getElementById('register-confirm').value; if(!n || !em || pw.length<6 || pw!==cf) return document.getElementById('auth-error').textContent='Valide nome, e-mail, senha (mínimo 6) e confirmação.'; try { await api.register({nome:n,email:em,password:pw}); e.target.reset(); document.getElementById('auth-error').textContent='Cadastro realizado. Faça login.'; } catch(err) { document.getElementById('auth-error').textContent=err.mensagem || 'Falha no cadastro'; } };
     },
     pageCart() {
-        const items=Cart.items(), app=document.getElementById('app');
-        if (!this.state.user || this.state.user.perfil !== 'cliente') { app.innerHTML='<main class="cart-page"><h1>Carrinho</h1><p>É necessário entrar como cliente para finalizar a compra.</p></main>'; return; }
-        app.innerHTML=`<main class="cart-page"><button id="cart-back">Voltar</button><h1>Revisar pedido</h1>${items.map(i=>`<article><h2>${this.escape(i.nome)}</h2><p>Estimativa: R$ ${(Cart.lineSubtotal(i)/100).toFixed(2)}</p><span>${i.quantity}</span></article>`).join('')||'<p>Carrinho vazio.</p>'}<p>Total estimado: R$ ${(Cart.total()/100).toFixed(2)}</p>${items.length?'<button id="checkout-action">Finalizar pedido</button>':''}<p id="checkout-feedback" role="status"></p></main>`;
-        document.getElementById('cart-back').onclick=()=>this.go('storefront'); const button=document.getElementById('checkout-action'); if(button) button.onclick=async()=>{button.disabled=true;button.textContent='Finalizando...';try{const order=await api.checkout(Cart.items());Cart.clear();this.updateCartCount();document.getElementById('checkout-feedback').textContent=`Pedido confirmado. Total do servidor: R$ ${Number(order.total).toFixed(2)}`;}catch(e){button.disabled=false;button.textContent='Finalizar pedido';document.getElementById('checkout-feedback').textContent=this.escape(e.mensagem||'Falha ao finalizar pedido');}};
+        const items = Cart.items(), app = document.getElementById('app');
+        if (!this.state.user || this.state.user.perfil !== 'cliente') {
+            app.innerHTML = '<main class="cart-page"><button type="button" id="cart-back">Voltar ao catálogo</button><h1>Carrinho</h1><p>É necessário entrar como cliente para finalizar o pedido.</p><button type="button" id="cart-login">Entrar como cliente</button></main>';
+            document.getElementById('cart-back').onclick = () => this.go('storefront');
+            document.getElementById('cart-login').onclick = () => this.go('login');
+            return;
+        }
+        app.innerHTML = `<main class="cart-page"><button type="button" id="cart-back">Voltar ao catálogo</button><h1>Revisar pedido</h1>${items.map(i=>`<article><h2>${this.escape(i.nome)}</h2><p>Estimativa: R$ ${(Cart.lineSubtotal(i)/100).toFixed(2)}</p><span>Quantidade: ${i.quantity}</span></article>`).join('')||'<p>Carrinho vazio.</p>'}<p>Total estimado: R$ ${(Cart.total()/100).toFixed(2)}</p>${items.length?'<button id="checkout-action">Finalizar pedido</button>':''}<p id="checkout-feedback" role="status"></p></main>`;
+        document.getElementById('cart-back').onclick = () => this.go('storefront');
+        const button = document.getElementById('checkout-action');
+        if (button) button.onclick = async () => {
+            button.disabled = true; button.textContent = 'Finalizando...';
+            try {
+                const order = await api.checkout(Cart.items());
+                Cart.clear();
+                this.updateCartCount();
+                if (button.isConnected) {
+                    this.pageCart();
+                    document.getElementById('checkout-feedback').textContent = `Pedido confirmado. Total do servidor: R$ ${Number(order.total).toFixed(2)}`;
+                }
+            } catch (error) {
+                if (button.isConnected) { button.disabled = false; button.textContent = 'Finalizar pedido'; document.getElementById('checkout-feedback').textContent = error.mensagem || 'Falha ao finalizar pedido'; }
+            }
+        };
     },
-    async pageOrders() { const app=document.getElementById('app'); app.innerHTML='<main class="orders-page"><button type="button" id="orders-back">Voltar ao catálogo</button><h1>Meus pedidos</h1><p role="status">Carregando pedidos...</p><div id="orders-list"></div></main>'; document.getElementById('orders-back').onclick=()=>this.go('storefront'); try { const orders=await api.getMyOrders(); const list=document.getElementById('orders-list'); list.innerHTML=orders.length?orders.map(o=>`<article><strong>Pedido ${this.escape(o.id)}</strong><p>Status: ${this.escape(o.status)} · Total: R$ ${Number(o.total).toFixed(2)} · ${this.escape(o.criado_em)}</p><button data-order="${this.escape(o.id)}">Detalhes</button></article>`).join(''):'<p>Nenhum pedido.</p>'; list.querySelectorAll('[data-order]').forEach(b=>b.onclick=async()=>{const o=await api.getMyOrder(b.dataset.order); document.getElementById('orders-list').insertAdjacentHTML('beforeend',`<pre>${this.escape(JSON.stringify(o.items,null,2))}</pre>`);}); } catch(e) { app.querySelector('[role=status]').textContent='Não foi possível carregar os pedidos.'; } },
+    async pageOrders() {
+        const app = document.getElementById('app');
+        app.innerHTML = '<main class="orders-page"><button type="button" id="orders-back">Voltar ao catálogo</button><h1>Meus pedidos</h1><p role="status">Carregando pedidos...</p><div id="orders-list"></div><section id="order-detail" aria-live="polite"></section></main>';
+        document.getElementById('orders-back').onclick = () => this.go('storefront');
+        const status = app.querySelector('[role=status]'), list = document.getElementById('orders-list');
+        try {
+            const orders = await api.getMyOrders();
+            if (!list.isConnected) return;
+            status.textContent = '';
+            list.innerHTML = orders.length ? orders.map(o => `<article><strong>Pedido ${this.escape(o.id)}</strong><p>Status: ${this.escape(o.status)} · Total: R$ ${Number(o.total).toFixed(2)} · ${this.escape(new Date(o.criado_em).toLocaleString('pt-BR'))}</p><button type="button" data-order="${this.escape(o.id)}">Detalhes</button></article>`).join('') : '<p>Nenhum pedido.</p>';
+            list.querySelectorAll('[data-order]').forEach(button => button.onclick = async () => {
+                const detail = document.getElementById('order-detail');
+                if (!detail) return;
+                detail.textContent = 'Carregando detalhes...';
+                try {
+                    const order = await api.getMyOrder(button.dataset.order);
+                    if (!detail.isConnected) return;
+                    detail.innerHTML = `<h2>Detalhes do pedido</h2><ul>${order.items.map(item => `<li>${this.escape(item.partName)} · ${this.escape(item.quantity)} × R$ ${Number(item.unitPrice).toFixed(2)}</li>`).join('')}</ul><strong>Total: R$ ${Number(order.total).toFixed(2)}</strong>`;
+                } catch (error) { if (detail.isConnected) detail.textContent = error.mensagem || 'Não foi possível carregar os detalhes.'; }
+            });
+        } catch (error) { if (status.isConnected) status.textContent = error.mensagem || 'Não foi possível carregar os pedidos.'; }
+    },
 
     // ============ PARTS ============
     filterParts(parts, query) {
@@ -353,121 +395,62 @@ const App = {
 
     // ============ USERS ============
     async pageUsers() {
-        document.getElementById('app').innerHTML = `
-        <div class="management-shell">
-            <aside class="management-sidebar">${this.sidebar('users')}</aside>
-            <main class="management-workspace">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="page-heading text-3xl font-bold">Equipe e acessos</h1>
-                    <button onclick="App.showAddUserModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all">
-                        <i class="fas fa-user-plus"></i> Novo Usuário
-                    </button>
-                </div>
-                <div id="users-content" class="table-card bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <p class="p-8 text-center text-slate-400">Carregando usuários...</p>
-                </div>
-            </main>
-        </div>
-        <!-- Modal Add User -->
-        <div id="modal-user" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold">Cadastrar Novo Usuário</h3>
-                    <button onclick="App.closeUserModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
-                </div>
-                <form id="user-form" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
-                        <input type="text" id="user-nome" required class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
-                        <input type="email" id="user-email" required class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Senha Provisória</label>
-                        <input type="password" id="user-password" required class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Perfil de Acesso</label>
-                        <select id="user-perfil" required class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="consulta">Consulta (Apenas leitura)</option>
-                            <option value="operador">Operador (Estoque)</option>
-                            <option value="admin">Administrador (Total)</option>
-                        </select>
-                    </div>
-                    <div class="pt-4 flex gap-3">
-                        <button type="button" onclick="App.closeUserModal()" class="flex-1 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all">Cancelar</button>
-                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">Cadastrar</button>
-                    </div>
-                </form>
-            </div>
-        </div>`;
-
+        if (this.state.user?.perfil !== 'admin') { this.go('storefront'); return; }
+        const app = document.getElementById('app');
+        app.innerHTML = `<div class="management-shell"><aside class="management-sidebar">${this.sidebar('users')}</aside><main class="management-workspace operations-page"><header class="management-header"><div><p class="eyebrow">Equipe · demonstração</p><h1 class="page-heading">Usuários e acessos</h1><p class="parts-subtitle">Consulte a equipe e seus perfis de acesso.</p></div><button type="button" class="parts-primary" id="user-add">+ Novo usuário</button></header><p id="users-feedback" role="status" aria-live="polite"></p><section class="operations-panel"><h2>Equipe cadastrada</h2><div id="users-content" class="operations-table" role="status">Carregando usuários...</div></section></main></div><div id="modal-user" class="part-modal" hidden><div class="part-modal-card" role="dialog" aria-modal="true" aria-labelledby="user-modal-title"><header class="part-modal-header"><div><p class="eyebrow">Equipe</p><h2 id="user-modal-title">Novo usuário</h2></div><button type="button" class="part-modal-close" aria-label="Fechar">×</button></header><form id="user-form" class="part-form"><label class="part-wide">Nome completo<input type="text" id="user-nome" required autocomplete="name"></label><label class="part-wide">E-mail<input type="email" id="user-email" required autocomplete="off"></label><label class="part-wide">Senha provisória<input type="password" id="user-password" required minlength="6" autocomplete="new-password"></label><label class="part-wide">Perfil de acesso<select id="user-perfil" required><option value="consulta">Consulta (apenas leitura)</option><option value="operador">Operador (estoque)</option><option value="admin">Administrador (total)</option></select></label><p id="user-modal-error" class="part-form-error part-wide" role="alert"></p><div class="part-modal-actions part-wide"><button type="button" class="part-cancel">Cancelar</button><button type="submit" class="parts-primary">Cadastrar usuário</button></div></form></div></div>`;
+        const modal = document.getElementById('modal-user');
+        const userContent = document.getElementById('users-content');
+        document.getElementById('user-add').onclick = () => this.showAddUserModal();
+        modal.querySelector('.part-modal-close').onclick = () => this.closeUserModal();
+        modal.querySelector('.part-cancel').onclick = () => this.closeUserModal();
+        modal.addEventListener('click', e => { if (e.target === modal) this.closeUserModal(); });
         document.getElementById('user-form').onsubmit = async (e) => {
             e.preventDefault();
-            const data = {
-                nome: document.getElementById('user-nome').value,
-                email: document.getElementById('user-email').value,
-                password: document.getElementById('user-password').value,
-                perfil: document.getElementById('user-perfil').value
-            };
+            const form = e.target, button = form.querySelector('button[type="submit"]');
+            const error = document.getElementById('user-modal-error');
+            const data = { nome: form.querySelector('#user-nome').value.trim(), email: form.querySelector('#user-email').value.trim(), password: form.querySelector('#user-password').value, perfil: form.querySelector('#user-perfil').value };
+            button.disabled = true; error.textContent = '';
             try {
                 await api.createUser(data);
+                if (!modal.isConnected) return;
                 this.closeUserModal();
-                this.pageUsers();
-            } catch(err) {
-                console.error('Create User Error:', err);
-                this.showFeedback(err.mensagem || `Erro ${err.codigo || ''}: Falha ao criar usuário. Verifique se o e-mail já existe.`);
-            }
+                await this.pageUsers();
+                const feedback = document.getElementById('users-feedback');
+                if (feedback) feedback.textContent = 'Usuário cadastrado com sucesso.';
+            } catch (err) { if (error.isConnected) error.textContent = err.mensagem || 'Não foi possível cadastrar o usuário.'; }
+            finally { button.disabled = false; }
         };
-
         try {
             const users = await api.getUsers();
-            const rows = users.map(u => `
-                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-all">
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-slate-900">${u.nome}</div>
-                        <div class="text-xs text-slate-400">${u.email}</div>
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${u.perfil==='admin' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}">
-                            ${u.perfil}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="inline-flex items-center gap-1.5 ${u.ativo ? 'text-emerald-600' : 'text-red-600'}">
-                            <span class="w-1.5 h-1.5 rounded-full ${u.ativo ? 'bg-emerald-600' : 'bg-red-600'}"></span>
-                            ${u.ativo ? 'Ativo' : 'Inativo'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="App.toggleUser('${u._id}')" class="text-sm font-medium ${u.ativo ? 'text-red-500 hover:text-red-700' : 'text-emerald-500 hover:text-emerald-700'}">
-                            ${u.ativo ? 'Desativar' : 'Ativar'}
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-
-            document.getElementById('users-content').innerHTML = `
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-bold">
-                        <tr>
-                            <th class="px-6 py-3">Usuário</th>
-                            <th class="px-6 py-3">Perfil</th>
-                            <th class="px-6 py-3">Status</th>
-                            <th class="px-6 py-3 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows || '<tr><td colspan="4" class="p-8 text-center text-slate-400">Nenhum usuário cadastrado</td></tr>'}</tbody>
-                </table>`;
-        } catch(e) {
-            document.getElementById('users-content').innerHTML = `<p class="p-8 text-red-500 text-center">${e.mensagem || 'Erro ao carregar usuários'}</p>`;
-        }
+            if (!userContent.isConnected) return;
+            const rows = users.map(u => `<tr><td><strong>${this.escape(u.nome)}</strong><br><small>${this.escape(u.email)}</small></td><td>${this.escape(u.perfil)}</td><td><span class="part-status ${u.ativo ? '' : 'part-status--low'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td><td><button type="button" class="part-cancel" data-toggle-user="${this.escape(u._id)}">${u.ativo ? 'Desativar' : 'Ativar'}</button></td></tr>`).join('');
+            userContent.innerHTML = `<table><thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nenhum usuário cadastrado.</td></tr>'}</tbody></table>`;
+            userContent.querySelectorAll('[data-toggle-user]').forEach(button => { button.onclick = () => this.toggleUser(button.dataset.toggleUser); });
+        } catch (error) { if (userContent.isConnected) userContent.textContent = error.mensagem || 'Não foi possível carregar os usuários.'; }
     },
-
-    showAddUserModal() { document.getElementById('modal-user').classList.remove('hidden'); },
-    closeUserModal() { document.getElementById('modal-user').classList.add('hidden'); },
+    showAddUserModal() {
+        const modal = document.getElementById('modal-user');
+        if (!modal || !modal.hidden) return;
+        const previousFocus = document.activeElement;
+        modal.hidden = false;
+        const keydown = event => {
+            if (event.key === 'Escape') { event.preventDefault(); this.closeUserModal(); return; }
+            if (event.key === 'Tab') {
+                const items = [...modal.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled])')];
+                if (event.shiftKey && document.activeElement === items[0]) { event.preventDefault(); items[items.length - 1].focus(); }
+                else if (!event.shiftKey && document.activeElement === items[items.length - 1]) { event.preventDefault(); items[0].focus(); }
+            }
+        };
+        this._userModalCleanup = () => { document.removeEventListener('keydown', keydown); if (previousFocus?.isConnected) previousFocus.focus(); };
+        document.addEventListener('keydown', keydown);
+        modal.querySelector('#user-nome').focus();
+    },
+    closeUserModal() {
+        const modal = document.getElementById('modal-user');
+        if (modal) { modal.hidden = true; modal.querySelector('form')?.reset(); }
+        this._userModalCleanup?.();
+        this._userModalCleanup = null;
+    },
     async toggleUser(id) {
         if (!window.confirm('Alterar status deste usuário?')) return;
         try {

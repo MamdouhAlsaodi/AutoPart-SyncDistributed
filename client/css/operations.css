@@ -20,6 +20,8 @@
 .part-status { display:inline-block; background:#e0f2e9; color:var(--green); font-size:.8rem; font-weight:800; padding:.25rem .5rem; }
 .part-status--low { background:#fff3df; color:#854308; }
 .part-modal { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:1rem; background:rgba(14,27,35,.7); }
+.part-modal[hidden] { display:none; }
+.part-form select { width:100%; min-height:2.7rem; border:1px solid var(--line); background:white; padding:.6rem; color:var(--graphite); }
 .part-modal-card { width:min(100%,42rem); max-height:calc(100dvh - 2rem); overflow-y:auto; background:var(--surface); color:var(--graphite); box-shadow:0 20px 60px #0005; border-top:4px solid var(--orange); padding:clamp(1rem,3vw,1.6rem); }
 .part-modal-header { display:flex; justify-content:space-between; align-items:start; gap:1rem; margin-bottom:1rem; }
 .part-modal-header h2 { margin:.15rem 0; }

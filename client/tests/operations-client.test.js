@@ -7,11 +7,12 @@ const source = fs.readFileSync(path.join(__dirname, '../js/app.js'), 'utf8');
 
 function appHarness(api = { getMyOrders: async () => [] }) {
     const nodes = new Map();
-    const root = { _html: '' };
+    const root = { _html: '', querySelector: () => nodes.get('orders-status') };
     Object.defineProperty(root, 'innerHTML', { get() { return this._html; }, set(value) {
         this._html = value;
         if (value.includes('id="orders-back"')) nodes.set('orders-back', { onclick: null });
-        if (value.includes('id="orders-list"')) nodes.set('orders-list', { innerHTML: '', querySelectorAll: () => [] });
+        if (value.includes('id="orders-list"')) nodes.set('orders-list', { isConnected: true, innerHTML: '', querySelectorAll: () => [] });
+        if (value.includes('role="status"')) nodes.set('orders-status', { isConnected: true, textContent: 'Carregando pedidos...' });
     } });
     nodes.set('app', root);
     const document = { readyState: 'loading', addEventListener() {}, getElementById: id => nodes.get(id) };
@@ -26,6 +27,7 @@ test('customer orders has a working back-to-catalogue button even when history i
     await App.pageOrders();
     assert.match(root.innerHTML, /id="orders-back"/);
     assert.match(root.innerHTML, /Voltar ao catálogo/);
+    assert.equal(nodes.get('orders-status').textContent, '');
     assert.equal(typeof nodes.get('orders-back').onclick, 'function');
     nodes.get('orders-back').onclick();
     assert.equal(App.state.page, 'storefront');
